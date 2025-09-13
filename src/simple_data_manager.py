@@ -148,7 +148,7 @@ class SimpleDataManager:
             logger.error(f"Error creating directories: {e}")
     
     def fetch_and_process_data(self, symbol=None, timeframes=None, category='medium_term'):
-        """获取并处理数据（配置驱动）"""
+        """获取并处理数据（配置驱动，带智能文件管理）"""
         if symbol is None:
             symbol = self.trading_symbol
         
@@ -156,15 +156,22 @@ class SimpleDataManager:
             # 从配置文件获取指定类别的时间周期
             timeframes = self._get_timeframes_by_category(category)
         
+        # 1. 在获取数据前，先扫描现有文件（除了即将更新的）
+        current_files_before = self._scan_existing_timeframe_files(symbol)
+        
         results = {'success': [], 'failed': []}
+        processed_files = []
         
         for timeframe in timeframes:
             try:
                 logger.info(f"Processing {timeframe} for {symbol}")
                 
+                # OKX API格式转换
+                api_timeframe = self._convert_timeframe_for_api(timeframe)
+                
                 # 获取K线数据
                 kline_data = self.data_fetcher.fetch_kline_data(
-                    instrument_id=symbol, bar=timeframe, limit=100
+                    instrument_id=symbol, bar=api_timeframe, limit=100
                 )
                 
                 if kline_data.empty:
@@ -184,8 +191,10 @@ class SimpleDataManager:
                     kline_data, kline_with_indicators, symbol, timeframe
                 )
                 
-                # 自动授权文件到MCP服务
+                # 记录处理的文件
                 if 'filename' in file_paths:
+                    processed_files.append(f"{timeframe}/{file_paths['filename']}")
+                    # 自动授权文件到MCP服务
                     self._auto_authorize_file_to_mcp(timeframe, file_paths['filename'])
                 
                 results['success'].append({
@@ -203,21 +212,24 @@ class SimpleDataManager:
                     'reason': str(e)
                 })
         
+        # 2. 获取数据后，清理未在本次处理中更新的文件
+        self._cleanup_outdated_files(symbol, current_files_before, processed_files)
+        
         return results
     
     def _save_timeframe_data(self, kline_data, indicator_data, symbol, timeframe):
-        """保存单个时间周期的数据（单一文件存储）"""
+        """保存单个时间周期的数据（固定命名，覆盖模式）"""
         try:
             base_path = Path(self.base_directory) / timeframe
             
-            # 使用固定文件名，便于MCP服务查找
-            filename = f"{symbol}_{timeframe}_latest.csv"
+            # 使用固定文件名格式（移除_latest后缀，简化命名）
+            filename = f"{symbol}_{timeframe}.csv"
             file_path = base_path / filename
             
-            # 只保存包含K线+技术指标的完整数据
+            # 直接覆盖保存包含K线+技术指标的完整数据
             indicator_data.to_csv(file_path, index=False)
             
-            logger.info(f"Saved combined data to: {file_path}")
+            logger.info(f"Saved/overwritten data to: {file_path}")
             
             return {
                 'combined': str(file_path),
@@ -325,6 +337,119 @@ class SimpleDataManager:
                 
         except Exception as e:
             logger.error(f"批量授权文件失败: {e}")
+    
+    def _convert_timeframe_for_api(self, timeframe):
+        """将配置文件中的时间周期格式转换为OKX API格式"""
+        # OKX API要求大写H，配置文件使用小写h
+        conversion_map = {
+            '1h': '1H', '2h': '2H', '4h': '4H', '6h': '6H', '12h': '12H',
+            '1d': '1D', '3d': '3D', '1w': '1W'
+        }
+        return conversion_map.get(timeframe, timeframe)
+    
+    def _scan_existing_timeframe_files(self, symbol):
+        """扫描现有的时间周期文件"""
+        try:
+            base_path = Path(self.base_directory)
+            existing_files = []
+            
+            if not base_path.exists():
+                return existing_files
+            
+            # 扫描所有时间周期目录
+            for timeframe_dir in base_path.iterdir():
+                if timeframe_dir.is_dir():
+                    timeframe = timeframe_dir.name
+                    
+                    # 查找所有相关文件
+                    for file_path in timeframe_dir.iterdir():
+                        if file_path.is_file() and symbol in file_path.name and file_path.suffix == '.csv':
+                            relative_path = f"{timeframe}/{file_path.name}"
+                            existing_files.append(relative_path)
+            
+            logger.info(f"Found {len(existing_files)} existing files for {symbol}")
+            return existing_files
+            
+        except Exception as e:
+            logger.error(f"Error scanning existing files: {e}")
+            return []
+    
+    def _cleanup_outdated_files(self, symbol, files_before, processed_files):
+        """清理过时的文件并同步MCP授权"""
+        try:
+            # 找出需要删除的文件（存在于处理前但不在处理后）
+            files_to_delete = []
+            
+            for file_path in files_before:
+                # 如果文件不在本次处理的文件列表中，标记删除
+                if file_path not in processed_files:
+                    files_to_delete.append(file_path)
+            
+            if not files_to_delete:
+                logger.info("No outdated files to clean up")
+                return
+            
+            # 删除过时文件
+            deleted_files = []
+            for relative_path in files_to_delete:
+                try:
+                    full_path = Path(self.base_directory) / relative_path
+                    if full_path.exists():
+                        full_path.unlink()
+                        deleted_files.append(relative_path)
+                        logger.info(f"Deleted outdated file: {relative_path}")
+                except Exception as e:
+                    logger.error(f"Failed to delete {relative_path}: {e}")
+            
+            # 从MCP取消授权已删除的文件
+            if deleted_files:
+                self._deauthorize_files_from_mcp(deleted_files)
+                logger.info(f"Cleaned up {len(deleted_files)} outdated files")
+                
+        except Exception as e:
+            logger.error(f"Error cleaning up outdated files: {e}")
+    
+    def _deauthorize_files_from_mcp(self, file_list):
+        """从MCP服务取消授权指定文件"""
+        try:
+            if not file_list:
+                return
+            
+            mcp_api_key = os.getenv("MCP_API_KEY")
+            if not mcp_api_key:
+                logger.warning("未设置MCP_API_KEY，跳过取消授权")
+                return
+            
+            headers = {
+                "x-api-key": mcp_api_key,
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "files": file_list
+            }
+            
+            # 使用配置中的MCP服务地址
+            config = ConfigLoader('config/enhanced_config.yaml').load_config()
+            mcp_config = config.get('mcp_service', {})
+            host = mcp_config.get('host', '127.0.0.1')
+            port = mcp_config.get('port', 5000)
+            
+            response = requests.post(
+                f"http://{host}:{port}/deauthorize",
+                json=data,
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"成功从MCP取消授权 {len(result.get('removed', []))} 个文件")
+            else:
+                logger.warning(f"MCP取消授权失败: {response.status_code}")
+                
+        except Exception as e:
+            logger.error(f"取消授权文件失败: {e}")
     
     def get_mcp_file_list(self):
         """获取MCP服务中的授权文件列表"""

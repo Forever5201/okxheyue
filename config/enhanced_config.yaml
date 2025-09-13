@@ -9,15 +9,15 @@ timeframes:
     - 15m        # 15分钟
     - 30m        # 30分钟
   medium_term:   # 中期  
-    - 1H         # 1小时
-    - 2H         # 2小时
-    - 4H         # 4小时
-    - 6H         # 6小时
+    - 1h         # 1小时
+    - 2h         # 2小时
+    - 4h         # 4小时
+    - 6h         # 6小时
   long_term:     # 长期
-    - 12H        # 12小时
-    - 1D         # 1天
-    - 3D         # 3天
-    - 1W         # 1周
+    - 12h        # 12小时
+    - 1d         # 1天
+    - 3d         # 3天
+    - 1w         # 1周
 
 # K线数据获取配置
 kline_config:
@@ -39,36 +39,36 @@ kline_config:
     output_count: 100
     save_format: "parquet"
   # 中期配置
-  1H:
+  1h:
     fetch_count: 200
     output_count: 150
     save_format: "parquet"
-  2H:
+  2h:
     fetch_count: 200
     output_count: 150
     save_format: "parquet"
-  4H:
+  4h:
     fetch_count: 200
     output_count: 100
     save_format: "parquet"
-  6H:
+  6h:
     fetch_count: 150
     output_count: 100
     save_format: "parquet"
   # 长期配置
-  12H:
+  12h:
     fetch_count: 150
     output_count: 80
     save_format: "parquet"
-  1D:
+  1d:
     fetch_count: 120
     output_count: 70
     save_format: "parquet"
-  3D:
+  3d:
     fetch_count: 100
     output_count: 60
     save_format: "parquet"
-  1W:
+  1w:
     fetch_count: 80
     output_count: 50
     save_format: "parquet"

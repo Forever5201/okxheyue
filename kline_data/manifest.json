@@ -1,8 +1,8 @@
 {
   "files": [
-    "1H/BTC-USD-SWAP_1H_latest.csv",
-    "2H/BTC-USD-SWAP_2H_latest.csv",
-    "4H/BTC-USD-SWAP_4H_latest.csv",
-    "6H/BTC-USD-SWAP_6H_latest.csv"
+    "1h/BTC-USD-SWAP_1h.csv",
+    "2h/BTC-USD-SWAP_2h.csv",
+    "4h/BTC-USD-SWAP_4h.csv",
+    "6h/BTC-USD-SWAP_6h.csv"
   ]
 }
