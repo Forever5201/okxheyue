@@ -25,7 +25,7 @@ def select_indicator_params(config, timeframe):
             return config['indicators'].get(category, config['indicators']['midterm'])
     return config['indicators']['midterm']
 
-def fetch_and_process_kline(data_fetcher, symbol, timeframe, config, is_mark_price=False):
+def fetch_and_process_kline(data_fetcher, symbol, timeframe, config, is_mark_price=False, include_current=True):
     """
     获取和处理K线数据，包括获取历史K线和当前未完结K线
     """
@@ -49,8 +49,10 @@ def fetch_and_process_kline(data_fetcher, symbol, timeframe, config, is_mark_pri
             logger.warning(f"No K-line data for {timeframe}.")
             return pd.DataFrame()
 
-        # 获取当前未完结K线
-        current_kline_df = data_fetcher.get_current_kline(symbol, timeframe)
+        # 获取当前未完结K线（仅在使用实际价格时追加，避免将 actual 当前K线混入 mark 价格序列）
+        current_kline_df = pd.DataFrame()
+        if include_current:
+            current_kline_df = data_fetcher.get_current_kline(symbol, timeframe)
         
         # 如果有未完结K线，添加到数据集
         if not current_kline_df.empty:
@@ -148,12 +150,25 @@ def main():
 
     # 处理K线数据
     timeframes_data = {}
-    logger.info("Fetching actual price timeframes data...")
+    # 读取数据源配置：单源模式，若同时为 true 则优先使用 mark 价格
+    ds_cfg = config.get('data_sources', {}) or {}
+    use_mark = bool(ds_cfg.get('mark_price', False))
+    use_actual = bool(ds_cfg.get('actual_price', True))
+    source = 'mark' if use_mark else ('actual' if use_actual else 'actual')
+
+    logger.info(f"Fetching {source} price timeframes data...")
     for tf in all_timeframes:
-        df = fetch_and_process_kline(data_fetcher, symbol, tf, config, is_mark_price=False)
+        df = fetch_and_process_kline(
+            data_fetcher,
+            symbol,
+            tf,
+            config,
+            is_mark_price=(source == 'mark'),
+            include_current=(source != 'mark')
+        )
         if not df.empty:
             timeframes_data[tf] = {
-                "type": "actual_price",
+                "type": "mark_price" if source == 'mark' else "actual_price",
                 "indicators_params": select_indicator_params(config, tf),
                 "data": df.to_dict(orient="records")
             }
