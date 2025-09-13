@@ -1,50 +1,46 @@
 """
 MCP (Model Control Protocol) 服务
-基于 FastAPI 实现的本地数据访问服务
+严格按照 local_mcp_设计与po_c代码（fast_api）.py 方案实现
 
-允许AI通过标准化API读取K线数据和技术指标
+目的：
+- 在本地运行一个受控服务（MCP），允许 AI 按需读取你事先授权的 K 线文件
+- 保证最小权限（白名单）、只读、可审计、原子更新
+
+特性：
+1. manifest.json：列出被授权允许读取的文件（由管理员通过 /authorize 添加）
+2. MCP 服务：对外提供接口：/list_allowed_files, /authorize, /deauthorize, /get_kline, /read_tail, /audit
+3. 每次读取写审计（audit.log），包含时间、操作、文件、返回行数等元数据
+4. 接口鉴权：使用本地环境变量 MCP_API_KEY 作为 API Key 验证
+5. 原子写入：保存 manifest 时使用临时文件 + 原子替换
 """
 
-import os
-import json
-import datetime
-from pathlib import Path
-from typing import List, Optional
-import pandas as pd
-from fastapi import FastAPI, HTTPException, Header, Depends, Query
+from fastapi import FastAPI, HTTPException, Header, Depends
 from pydantic import BaseModel
+from typing import List, Optional
+import os, json, datetime
+import pandas as pd
 from src.logger import setup_logger
 
 logger = setup_logger()
 
-# 配置
+# -------------------- 配置 --------------------
 DATA_ROOT = os.path.abspath("./kline_data")
 MANIFEST_PATH = os.path.join(DATA_ROOT, "manifest.json")
 AUDIT_LOG_PATH = os.path.join(DATA_ROOT, "audit.log")
+# API Key 从环境变量读取
 ENV_API_KEY_NAME = "MCP_API_KEY"
-MAX_RECORDS_LIMIT = 5000
+# 可配置最大返回行数上限（防止一次性返回太多）
+MAX_BARS_LIMIT = 5000
 
-# FastAPI 实例
+# -------------------- FastAPI 实例 --------------------
 app = FastAPI(
     title="AI Trading MCP Service",
-    description="本地K线数据和技术指标访问服务",
-    version="1.0.0"
+    description="本地K线数据和技术指标访问服务（严格按照原始设计）",
+    version="2.0.0"
 )
 
-# 数据模型
-class AuthorizeReq(BaseModel):
-    files: List[str]
+# -------------------- 工具函数 --------------------
 
-class DeauthorizeReq(BaseModel):
-    files: List[str]
-
-class DataQueryReq(BaseModel):
-    timeframe: str
-    symbol: Optional[str] = "BTC-USD-SWAP"
-    data_type: str = "combined"  # kline, indicators, combined
-    max_records: Optional[int] = 500
-
-# 工具函数
 def ensure_dirs():
     """确保目录存在"""
     os.makedirs(DATA_ROOT, exist_ok=True)
@@ -59,241 +55,336 @@ def load_manifest():
         return json.load(f)
 
 def save_manifest(manifest: dict):
-    """原子性保存文件清单"""
+    """原子性写入 manifest：写 tmp 文件并 replace"""
     ensure_dirs()
     tmp = MANIFEST_PATH + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
+    # 原子替换
     os.replace(tmp, MANIFEST_PATH)
 
 def append_audit(entry: dict):
-    """追加审计日志"""
+    """把一条审计记录追加写入 audit.log（每行为一个 JSON）"""
     ensure_dirs()
-    entry = dict(entry)
-    entry["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
+    entry = dict(entry)  # 复制一份
+    entry["ts"] = datetime.datetime.utcnow().isoformat() + "Z"
     with open(AUDIT_LOG_PATH, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-def is_file_allowed(filename: str) -> bool:
+def is_allowed(filename: str) -> bool:
     """检查文件是否在白名单中"""
     manifest = load_manifest()
     return filename in manifest.get("files", [])
 
-def safe_join(relative_path: str) -> str:
-    """安全的路径拼接，防止路径穿越"""
-    if not relative_path or ".." in relative_path or relative_path.startswith("/"):
-        raise HTTPException(status_code=400, detail="invalid file path")
-    
-    full_path = os.path.join(DATA_ROOT, relative_path)
-    full_path = os.path.abspath(full_path)
-    
-    # 确保路径在DATA_ROOT下
-    if not full_path.startswith(os.path.abspath(DATA_ROOT) + os.sep) and full_path != os.path.abspath(DATA_ROOT):
-        raise HTTPException(status_code=400, detail="invalid file path")
-    
-    return full_path
+def safe_join(name: str) -> str:
+    """基础安全检查：禁止路径穿越与绝对路径。返回绝对路径"""
+    if not name or ".." in name or name.startswith("/"):
+        raise HTTPException(status_code=400, detail="invalid filename")
+    full = os.path.join(DATA_ROOT, name)
+    full = os.path.abspath(full)
+    # 确保目标仍在 DATA_ROOT 下
+    if not full.startswith(os.path.abspath(DATA_ROOT) + os.sep) and full != os.path.abspath(DATA_ROOT):
+        raise HTTPException(status_code=400, detail="invalid filename")
+    return full
 
 def file_fingerprint(path: str) -> str:
-    """生成文件指纹"""
+    """轻量文件指纹：mtime_ns + size，便于审计对比"""
     try:
         st = os.stat(path)
         return f"{st.st_mtime_ns}-{st.st_size}"
     except:
         return "unknown"
 
-# 鉴权依赖
+# -------------------- 简单鉴权依赖 --------------------
+
 def get_api_key(x_api_key: Optional[str] = Header(None)) -> str:
-    """API Key验证"""
-    expected_key = os.environ.get(ENV_API_KEY_NAME)
-    if not expected_key:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Server misconfigured: {ENV_API_KEY_NAME} environment variable not set"
-        )
-    
+    """从 header 获取 API Key，并与环境变量比较"""
+    key = os.environ.get(ENV_API_KEY_NAME)
+    if not key:
+        raise HTTPException(status_code=500, detail=f"Server misconfigured: set {ENV_API_KEY_NAME} env var")
     if x_api_key is None:
-        raise HTTPException(
-            status_code=401, 
-            detail="Missing API key header 'x-api-key'"
-        )
-    
-    if x_api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Missing API key header 'x-api-key'")
+    if x_api_key != key:
         raise HTTPException(status_code=401, detail="Invalid API key")
-    
     return x_api_key
 
-# API 端点
+# -------------------- 请求/响应模型 --------------------
+
+class AuthorizeReq(BaseModel):
+    files: List[str]
+
+class DeauthorizeReq(BaseModel):
+    files: List[str]
+
+class KlineReq(BaseModel):
+    name: str  # 文件名，如 "1H/BTC-USD-SWAP_1H_latest.csv"
+    start: Optional[str] = None  # 开始时间，格式如 "2024-01-01 00:00:00"
+    end: Optional[str] = None    # 结束时间
+    max_bars: Optional[int] = 500  # 最大返回行数
+
+class ReadTailReq(BaseModel):
+    name: str
+    lines: Optional[int] = 50  # 读取最后N行
+
+# -------------------- API 实现 --------------------
+
 @app.on_event("startup")
 def startup_event():
     """启动事件"""
     ensure_dirs()
-    logger.info("MCP Service started")
+    logger.info("MCP Service started (v2.0.0 - 严格按照原始设计)")
 
 @app.get("/")
 def root():
     """根路径"""
     return {
         "service": "AI Trading MCP Service",
-        "version": "1.0.0",
-        "status": "running",
+        "version": "2.0.0",
+        "description": "严格按照 local_mcp 原始设计实现",
         "endpoints": [
-            "/list_files",
-            "/authorize",
-            "/deauthorize", 
-            "/query_data",
-            "/get_latest_data"
+            "/list_allowed_files",
+            "/authorize", 
+            "/deauthorize",
+            "/get_kline",
+            "/read_tail",
+            "/audit"
         ]
     }
 
-@app.get("/list_files")
-def list_files(api_key: str = Depends(get_api_key)):
-    """列出可访问的文件"""
+@app.get("/list_allowed_files")
+def list_allowed_files(api_key: str = Depends(get_api_key)):
+    """返回 manifest 中的白名单文件列表"""
     try:
         manifest = load_manifest()
-        files = []
+        files_with_info = []
         
         for filename in manifest.get("files", []):
             try:
                 full_path = safe_join(filename)
                 if os.path.exists(full_path):
                     stat_info = os.stat(full_path)
-                    files.append({
-                        "filename": filename,
+                    files_with_info.append({
+                        "name": filename,
                         "size": stat_info.st_size,
                         "modified": datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
                         "fingerprint": file_fingerprint(full_path)
                     })
-            except:
+            except Exception as e:
+                logger.warning(f"Error accessing file {filename}: {e}")
                 continue
         
-        return {"files": files, "total": len(files)}
+        append_audit({"action": "list_allowed_files", "count": len(files_with_info)})
+        return {"files": files_with_info}
         
     except Exception as e:
-        logger.error(f"Error listing files: {e}")
+        logger.error(f"Error listing allowed files: {e}")
         raise HTTPException(status_code=500, detail="Failed to list files")
 
 @app.post("/authorize")
-def authorize_files(req: AuthorizeReq, api_key: str = Depends(get_api_key)):
-    """授权访问文件"""
+def authorize(req: AuthorizeReq, api_key: str = Depends(get_api_key)):
+    """把文件加入白名单（管理员操作）"""
     try:
         manifest = load_manifest()
-        current_files = set(manifest.get("files", []))
+        files = set(manifest.get("files", []))
+        added = []
         
-        # 验证文件存在
-        valid_files = []
-        for filename in req.files:
-            try:
-                full_path = safe_join(filename)
-                if os.path.exists(full_path):
-                    valid_files.append(filename)
-            except:
-                continue
+        for f in req.files:
+            # 检查路径安全性
+            if ".." in f or f.startswith("/"):
+                raise HTTPException(status_code=400, detail=f"invalid filename: {f}")
+            
+            full = safe_join(f)
+            if not os.path.exists(full):
+                raise HTTPException(status_code=404, detail=f"file not found: {f}")
+            
+            if f not in files:
+                files.add(f)
+                added.append(f)
         
-        # 更新清单
-        current_files.update(valid_files)
-        manifest["files"] = list(current_files)
+        manifest["files"] = sorted(list(files))
         save_manifest(manifest)
         
-        # 审计日志
         append_audit({
-            "action": "authorize",
-            "files": valid_files,
+            "action": "authorize", 
+            "added": added, 
             "api_key_hash": hash(api_key) % 10000
         })
         
-        return {"authorized": valid_files, "total": len(current_files)}
+        return {
+            "status": "ok", 
+            "added": added, 
+            "total_allowed": len(manifest["files"])
+        }
         
     except Exception as e:
         logger.error(f"Error authorizing files: {e}")
         raise HTTPException(status_code=500, detail="Authorization failed")
 
 @app.post("/deauthorize")
-def deauthorize_files(req: DeauthorizeReq, api_key: str = Depends(get_api_key)):
-    """取消授权文件"""
+def deauthorize(req: DeauthorizeReq, api_key: str = Depends(get_api_key)):
+    """从白名单移除文件"""
     try:
         manifest = load_manifest()
-        current_files = set(manifest.get("files", []))
+        files = set(manifest.get("files", []))
+        removed = []
         
-        # 移除指定文件
-        for filename in req.files:
-            current_files.discard(filename)
+        for f in req.files:
+            if f in files:
+                files.remove(f)
+                removed.append(f)
         
-        manifest["files"] = list(current_files)
+        manifest["files"] = sorted(list(files))
         save_manifest(manifest)
         
-        # 审计日志
         append_audit({
-            "action": "deauthorize",
-            "files": req.files,
+            "action": "deauthorize", 
+            "removed": removed,
             "api_key_hash": hash(api_key) % 10000
         })
         
-        return {"deauthorized": req.files, "remaining": len(current_files)}
+        return {
+            "status": "ok", 
+            "removed": removed, 
+            "remaining": len(manifest["files"])
+        }
         
     except Exception as e:
         logger.error(f"Error deauthorizing files: {e}")
         raise HTTPException(status_code=500, detail="Deauthorization failed")
 
-@app.post("/query_data")
-def query_data(req: DataQueryReq, api_key: str = Depends(get_api_key)):
-    """查询交易数据"""
+@app.post("/get_kline")
+def get_kline(req: KlineReq, api_key: str = Depends(get_api_key)):
+    """读取 K 线数据（核心功能）"""
     try:
-        # 查找匹配的文件
-        manifest = load_manifest()
-        available_files = manifest.get("files", [])
+        # 检查文件是否在白名单中
+        if not is_allowed(req.name):
+            raise HTTPException(status_code=403, detail=f"file not authorized: {req.name}")
         
-        # 根据时间周期和数据类型过滤文件
-        matching_files = [
-            f for f in available_files
-            if req.timeframe in f and req.data_type in f and req.symbol in f
-        ]
+        full_path = safe_join(req.name)
+        if not os.path.exists(full_path):
+            raise HTTPException(status_code=404, detail=f"file not found: {req.name}")
         
-        if not matching_files:
-            return {"data": [], "message": f"No data found for {req.symbol} {req.timeframe} {req.data_type}"}
+        # 读取 CSV 数据
+        try:
+            df = pd.read_csv(full_path)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"failed to read CSV: {str(e)}")
         
-        # 取最新的文件
-        latest_file = max(matching_files, key=lambda f: os.path.getmtime(safe_join(f)))
+        original_count = len(df)
         
-        # 读取数据
-        full_path = safe_join(latest_file)
-        df = pd.read_csv(full_path)
+        # 时间过滤（如果提供了 start/end）
+        if req.start or req.end:
+            if 'timestamp' in df.columns:
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
+                if req.start:
+                    start_time = pd.to_datetime(req.start)
+                    df = df[df['timestamp'] >= start_time]
+                if req.end:
+                    end_time = pd.to_datetime(req.end)
+                    df = df[df['timestamp'] <= end_time]
+            else:
+                logger.warning(f"Time filtering requested but no 'timestamp' column in {req.name}")
         
-        # 限制记录数
-        max_records = min(req.max_records or 500, MAX_RECORDS_LIMIT)
-        df = df.tail(max_records)
+        # 限制返回行数
+        max_bars = min(req.max_bars or 500, MAX_BARS_LIMIT)
+        if len(df) > max_bars:
+            df = df.tail(max_bars)  # 取最新的数据
         
-        # 审计日志
+        # 审计记录
         append_audit({
-            "action": "query_data",
-            "file": latest_file,
-            "records": len(df),
+            "action": "get_kline",
+            "file": req.name,
+            "original_rows": original_count,
+            "returned_rows": len(df),
+            "start": req.start,
+            "end": req.end,
+            "max_bars": max_bars,
+            "fingerprint": file_fingerprint(full_path),
             "api_key_hash": hash(api_key) % 10000
         })
         
         return {
+            "file": req.name,
             "data": df.to_dict('records'),
-            "file": latest_file,
-            "records": len(df),
-            "columns": list(df.columns)
+            "metadata": {
+                "total_rows": len(df),
+                "original_rows": original_count,
+                "columns": list(df.columns),
+                "start_time": req.start,
+                "end_time": req.end,
+                "file_fingerprint": file_fingerprint(full_path)
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reading kline data: {e}")
+        raise HTTPException(status_code=500, detail="Failed to read kline data")
+
+@app.post("/read_tail")
+def read_tail(req: ReadTailReq, api_key: str = Depends(get_api_key)):
+    """读取文件末尾几行（快速预览）"""
+    try:
+        if not is_allowed(req.name):
+            raise HTTPException(status_code=403, detail=f"file not authorized: {req.name}")
+        
+        full_path = safe_join(req.name)
+        if not os.path.exists(full_path):
+            raise HTTPException(status_code=404, detail=f"file not found: {req.name}")
+        
+        df = pd.read_csv(full_path)
+        lines = min(req.lines or 50, 200)  # 最多200行
+        tail_df = df.tail(lines)
+        
+        append_audit({
+            "action": "read_tail",
+            "file": req.name, 
+            "lines": len(tail_df),
+            "api_key_hash": hash(api_key) % 10000
+        })
+        
+        return {
+            "file": req.name,
+            "data": tail_df.to_dict('records'),
+            "lines": len(tail_df),
+            "total_file_rows": len(df)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reading file tail: {e}")
+        raise HTTPException(status_code=500, detail="Failed to read file tail")
+
+@app.get("/audit")
+def get_audit_log(api_key: str = Depends(get_api_key), lines: int = 100):
+    """获取审计日志（管理员功能）"""
+    try:
+        if not os.path.exists(AUDIT_LOG_PATH):
+            return {"audit": [], "message": "No audit log found"}
+        
+        audit_entries = []
+        lines = min(lines, 1000)  # 最多1000行
+        
+        with open(AUDIT_LOG_PATH, "r", encoding="utf-8") as f:
+            all_lines = f.readlines()
+            recent_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+            
+            for line in recent_lines:
+                line = line.strip()
+                if line:
+                    try:
+                        audit_entries.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        
+        return {
+            "audit": audit_entries,
+            "total_entries": len(audit_entries),
+            "showing_recent": lines
         }
         
     except Exception as e:
-        logger.error(f"Error querying data: {e}")
-        raise HTTPException(status_code=500, detail="Data query failed")
-
-@app.get("/get_latest_data")
-def get_latest_data(
-    timeframe: str = Query(..., description="时间周期，如1H, 4H, 1D"),
-    symbol: str = Query("BTC-USD-SWAP", description="交易对"),
-    data_type: str = Query("combined", description="数据类型"),
-    max_records: int = Query(100, description="最大记录数"),
-    api_key: str = Depends(get_api_key)
-):
-    """获取最新数据的GET接口"""
-    req = DataQueryReq(
-        timeframe=timeframe,
-        symbol=symbol,
-        data_type=data_type,
-        max_records=max_records
-    )
-    return query_data(req, api_key)
+        logger.error(f"Error reading audit log: {e}")
+        raise HTTPException(status_code=500, detail="Failed to read audit log")

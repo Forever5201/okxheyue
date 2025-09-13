@@ -6,6 +6,7 @@ Simplified Data Manager for AI Trading System
 import os
 import json
 import pandas as pd
+import requests
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
@@ -43,31 +44,112 @@ class SimpleDataManager:
         self._create_directories()
         
         logger.info("Simple Data Manager initialized successfully")
+        
+        # 初始化时授权所有现有文件
+        self.authorize_all_existing_files_to_mcp()
+    
+    def _get_all_timeframes_from_config(self):
+        """从配置文件获取所有时间周期"""
+        timeframes_config = self.config.get('timeframes', {})
+        all_timeframes = []
+        
+        for category, tfs in timeframes_config.items():
+            if isinstance(tfs, list):
+                all_timeframes.extend(tfs)
+        
+        # 如果配置为空，使用默认值
+        if not all_timeframes:
+            all_timeframes = ['1m', '5m', '15m', '30m', '1H', '2H', '4H', '6H', '12H', '1D']
+            logger.warning("未找到配置的时间周期，使用默认值")
+        
+        return list(set(all_timeframes))  # 去重
+    
+    def _get_timeframes_by_category(self, category='medium_term'):
+        """根据类别获取时间周期"""
+        timeframes_config = self.config.get('timeframes', {})
+        
+        if category in timeframes_config:
+            return timeframes_config[category]
+        
+        # 如果指定类别不存在，返回默认值
+        logger.warning(f"未找到类别 '{category}' 的时间周期配置，使用默认值")
+        return ['1H', '4H', '1D']
+    
+    def _get_indicator_config_by_category(self, category='medium_term'):
+        """根据类别获取技术指标配置"""
+        indicators_config = self.config.get('indicators', {})
+        
+        if category in indicators_config:
+            return indicators_config[category]
+        
+        # 如果指定类别不存在，使用通用配置
+        return indicators_config.get('common', {})
+    
+    def _auto_authorize_file_to_mcp(self, timeframe, filename):
+        """自动授权新生成的文件到MCP服务"""
+        try:
+            # 构造文件相对路径（相对于kline_data目录）
+            relative_path = f"{timeframe}/{filename}"
+            
+            # 获取MCP API Key
+            mcp_api_key = os.getenv("MCP_API_KEY")
+            if not mcp_api_key:
+                logger.warning("未设置MCP_API_KEY，跳过自动授权")
+                return
+            
+            # 调用MCP授权接口
+            headers = {
+                "x-api-key": mcp_api_key,
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "files": [relative_path]
+            }
+            
+            # 假设MCP服务在本地运行
+            response = requests.post(
+                "http://localhost:5000/authorize",
+                json=data,
+                headers=headers,
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"成功授权文件到MCP: {relative_path}")
+            else:
+                logger.warning(f"MCP授权失败: {response.status_code} - {response.text}")
+                
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"MCP服务不可用，跳过自动授权: {e}")
+        except Exception as e:
+            logger.error(f"自动授权文件失败: {e}")
     
     def _create_directories(self):
-        """创建数据存储目录"""
+        """创建数据存储目录（配置驱动）"""
         try:
             base_path = Path(self.base_directory)
             base_path.mkdir(exist_ok=True)
             
-            timeframes = ['1m', '5m', '15m', '30m', '1H', '2H', '4H', '6H', '12H', '1D']
+            # 从配置文件获取所有时间周期
+            timeframes = self._get_all_timeframes_from_config()
+            
             for tf in timeframes:
                 tf_path = base_path / tf
                 tf_path.mkdir(exist_ok=True)
-                (tf_path / "kline").mkdir(exist_ok=True)
-                (tf_path / "indicators").mkdir(exist_ok=True)
-                (tf_path / "combined").mkdir(exist_ok=True)
+                # 不再创建子目录，直接在时间周期目录下存储文件
                 
         except Exception as e:
             logger.error(f"Error creating directories: {e}")
     
-    def fetch_and_process_data(self, symbol=None, timeframes=None):
-        """获取并处理数据"""
+    def fetch_and_process_data(self, symbol=None, timeframes=None, category='medium_term'):
+        """获取并处理数据（配置驱动）"""
         if symbol is None:
             symbol = self.trading_symbol
         
         if timeframes is None:
-            timeframes = ['1H', '4H', '1D']  # 默认时间周期
+            # 从配置文件获取指定类别的时间周期
+            timeframes = self._get_timeframes_by_category(category)
         
         results = {'success': [], 'failed': []}
         
@@ -87,15 +169,19 @@ class SimpleDataManager:
                     })
                     continue
                 
-                # 计算技术指标
+                # 计算技术指标（使用配置驱动）
                 kline_with_indicators = self.indicator_calculator.calculate_all_indicators(
-                    kline_data.copy(), 'medium_term'
+                    kline_data.copy(), category
                 )
                 
                 # 保存数据
                 file_paths = self._save_timeframe_data(
                     kline_data, kline_with_indicators, symbol, timeframe
                 )
+                
+                # 自动授权文件到MCP服务
+                if 'filename' in file_paths:
+                    self._auto_authorize_file_to_mcp(timeframe, file_paths['filename'])
                 
                 results['success'].append({
                     'timeframe': timeframe,
@@ -115,24 +201,23 @@ class SimpleDataManager:
         return results
     
     def _save_timeframe_data(self, kline_data, indicator_data, symbol, timeframe):
-        """保存单个时间周期的数据"""
+        """保存单个时间周期的数据（单一文件存储）"""
         try:
             base_path = Path(self.base_directory) / timeframe
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
-            file_paths = {}
+            # 使用固定文件名，便于MCP服务查找
+            filename = f"{symbol}_{timeframe}_latest.csv"
+            file_path = base_path / filename
             
-            # 保存K线数据
-            kline_file = base_path / "kline" / f"{symbol}_{timeframe}_kline_{timestamp}.csv"
-            kline_data.to_csv(kline_file, index=False)
-            file_paths['kline'] = str(kline_file)
+            # 只保存包含K线+技术指标的完整数据
+            indicator_data.to_csv(file_path, index=False)
             
-            # 保存合并数据
-            combined_file = base_path / "combined" / f"{symbol}_{timeframe}_combined_{timestamp}.csv"
-            indicator_data.to_csv(combined_file, index=False)
-            file_paths['combined'] = str(combined_file)
+            logger.info(f"Saved combined data to: {file_path}")
             
-            return file_paths
+            return {
+                'combined': str(file_path),
+                'filename': filename  # 返回文件名供 MCP 服务使用
+            }
             
         except Exception as e:
             logger.error(f"Error saving data for {timeframe}: {e}")
@@ -176,3 +261,79 @@ class SimpleDataManager:
                 'symbol': symbol,
                 'error': str(e)
             }
+    
+    def authorize_all_existing_files_to_mcp(self):
+        """授权所有现有数据文件到MCP服务（初始化时使用）"""
+        try:
+            base_path = Path(self.base_directory)
+            if not base_path.exists():
+                logger.info("数据目录不存在，跳过批量授权")
+                return
+            
+            files_to_authorize = []
+            
+            # 扫描所有时间周期目录
+            for timeframe_dir in base_path.iterdir():
+                if timeframe_dir.is_dir():
+                    # 查找 *_latest.csv 文件
+                    for csv_file in timeframe_dir.glob("*_latest.csv"):
+                        relative_path = f"{timeframe_dir.name}/{csv_file.name}"
+                        files_to_authorize.append(relative_path)
+            
+            if not files_to_authorize:
+                logger.info("未找到需要授权的数据文件")
+                return
+            
+            # 批量授权
+            mcp_api_key = os.getenv("MCP_API_KEY")
+            if not mcp_api_key:
+                logger.warning("未设置MCP_API_KEY，跳过批量授权")
+                return
+            
+            headers = {
+                "x-api-key": mcp_api_key,
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "files": files_to_authorize
+            }
+            
+            response = requests.post(
+                "http://localhost:5000/authorize",
+                json=data,
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"成功批量授权 {len(result.get('added', []))} 个文件到MCP")
+            else:
+                logger.warning(f"MCP批量授权失败: {response.status_code}")
+                
+        except Exception as e:
+            logger.error(f"批量授权文件失败: {e}")
+    
+    def get_mcp_file_list(self):
+        """获取MCP服务中的授权文件列表"""
+        try:
+            mcp_api_key = os.getenv("MCP_API_KEY")
+            if not mcp_api_key:
+                return {"error": "MCP_API_KEY not set"}
+            
+            headers = {"x-api-key": mcp_api_key}
+            
+            response = requests.get(
+                "http://localhost:5000/list_allowed_files",
+                headers=headers,
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {"error": f"MCP service error: {response.status_code}"}
+                
+        except Exception as e:
+            return {"error": f"Failed to connect to MCP service: {e}"}
