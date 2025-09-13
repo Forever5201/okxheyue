@@ -57,13 +57,13 @@ def test_okx_connection():
     try:
         print("\n🔗 测试OKX连接...")
         
-        from okx.api import Public
+        from okx.api import Market
         
-        # 创建公开API客户端（不需要认证）
-        public_api = Public()
+        # 创建市场API客户端（不需要认证）
+        market_api = Market()
         
         # 测试获取BTC价格
-        result = public_api.get_tickers(instType="SWAP", instId="BTC-USD-SWAP")
+        result = market_api.tickers(instType="SWAP", instId="BTC-USD-SWAP")
         
         if result and result.get('data'):
             price_data = result['data'][0]

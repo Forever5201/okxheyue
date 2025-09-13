@@ -1,4 +1,4 @@
-from okx.api import Account as AccountAPI
+from okx.api import API, Account
 from src.logger import setup_logger
 import json
 
@@ -14,7 +14,9 @@ class AccountFetcher:
             passphrase (str): OKX API口令
             flag (str, optional): 交易模式,'0'为实盘,'1'为模拟盘. Defaults to "1".
         """
-        self.client = AccountAPI(api_key, secret_key, passphrase, False, flag)
+        # 初始化OKX API客户端
+        self.okx_api = API(api_key, secret_key, passphrase, False, flag)
+        self.client = Account(self.okx_api)
 
     def _safe_float(self, value, default=0.0):
         """
