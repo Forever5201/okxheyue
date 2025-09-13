@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 from src.logger import setup_logger
+try:
+    import pandas_ta as ta  # type: ignore
+except Exception:
+    ta = None
 
 logger = setup_logger()
 
@@ -112,37 +116,85 @@ class TechnicalIndicator:
 
         df = df.dropna(subset=['close', 'high', 'low'])  # 清理NaN
 
-        # 计算 RSI
-        logger.info("Calculating RSI...")
-        df['rsi'] = RSIIndicator(df['close'], self.params['rsi_window']).rsi()
+        used_pandas_ta = False
+        if ta is not None:
+            try:
+                logger.info("Calculating indicators with pandas_ta...")
+                # RSI（默认 pandas_ta 使用 RMA；为兼容 legacy SMA，可设置 talib=False + mamode='sma'）
+                rsi_series = ta.rsi(close=df['close'], length=int(self.params['rsi_window']), talib=False, mamode='sma')
+                df['rsi'] = rsi_series.fillna(0).astype(float)
 
-        # 计算布林带
-        logger.info("Calculating Bollinger Bands...")
-        bb_upper, bb_lower = BollingerBands(
-            df['close'], self.params['bollinger_window'], self.params['bollinger_dev']
-        ).calculate()
-        df['bollinger_upper'] = bb_upper
-        df['bollinger_lower'] = bb_lower
+                # Bollinger Bands
+                bb = ta.bbands(close=df['close'], length=int(self.params['bollinger_window']), std=float(self.params['bollinger_dev']))
+                if bb is not None and not bb.empty:
+                    # BBL: lower, BBU: upper
+                    lower_col = [c for c in bb.columns if c.startswith('BBL_')]
+                    upper_col = [c for c in bb.columns if c.startswith('BBU_')]
+                    df['bollinger_lower'] = bb[lower_col[0]].fillna(0).astype(float) if lower_col else 0.0
+                    df['bollinger_upper'] = bb[upper_col[0]].fillna(0).astype(float) if upper_col else 0.0
+                else:
+                    df['bollinger_lower'] = 0.0
+                    df['bollinger_upper'] = 0.0
 
-        # 计算 MACD
-        logger.info("Calculating MACD...")
-        macd_line, macd_signal = MACD(
-            df['close'], self.params['macd_slow'], self.params['macd_fast'], self.params['macd_signal']
-        ).calculate()
-        df['macd'] = macd_line
-        df['macd_signal'] = macd_signal
+                # MACD
+                macd = ta.macd(close=df['close'], fast=int(self.params['macd_fast']), slow=int(self.params['macd_slow']), signal=int(self.params['macd_signal']))
+                if macd is not None and not macd.empty:
+                    macd_line_col = [c for c in macd.columns if c.startswith('MACD_') and not c.startswith('MACDh_') and not c.startswith('MACDs_')]
+                    macd_signal_col = [c for c in macd.columns if c.startswith('MACDs_')]
+                    df['macd'] = macd[macd_line_col[0]].fillna(0).astype(float) if macd_line_col else 0.0
+                    df['macd_signal'] = macd[macd_signal_col[0]].fillna(0).astype(float) if macd_signal_col else 0.0
+                else:
+                    df['macd'] = 0.0
+                    df['macd_signal'] = 0.0
 
-        # 计算 ATR
-        logger.info("Calculating ATR...")
-        df['atr'] = AverageTrueRange(df['high'], df['low'], df['close'], self.params['atr_window']).calculate()
+                # ATR（与 legacy 接近：rolling mean，而非 RMA；pandas_ta 支持 mamode）
+                atr_series = ta.atr(high=df['high'], low=df['low'], close=df['close'], length=int(self.params['atr_window']), mamode='sma')
+                df['atr'] = atr_series.fillna(0).astype(float)
 
-        # 计算 VWAP
-        logger.info("Calculating VWAP...")
-        if 'volume' in df.columns and df['volume'].sum() > 0:
-            df['vwap'] = VWAP(df).calculate()
-        else:
-            logger.warning("VWAP skipped due to missing or invalid 'volume' data.")
-            df['vwap'] = 0.0
+                # VWAP（需要有效的 volume）
+                if 'volume' in df.columns and float(df['volume'].sum()) > 0:
+                    vwap_series = ta.vwap(high=df['high'], low=df['low'], close=df['close'], volume=df['volume'])
+                    df['vwap'] = vwap_series.fillna(0).astype(float)
+                else:
+                    logger.warning("VWAP skipped due to missing or invalid 'volume' data.")
+                    df['vwap'] = 0.0
+
+                used_pandas_ta = True
+            except Exception as e:
+                logger.error(f"pandas_ta calculation failed, falling back to legacy implementations: {e}", exc_info=True)
+
+        if not used_pandas_ta:
+            # 计算 RSI（legacy）
+            logger.info("Calculating RSI (legacy)...")
+            df['rsi'] = RSIIndicator(df['close'], self.params['rsi_window']).rsi()
+
+            # 计算布林带（legacy）
+            logger.info("Calculating Bollinger Bands (legacy)...")
+            bb_upper, bb_lower = BollingerBands(
+                df['close'], self.params['bollinger_window'], self.params['bollinger_dev']
+            ).calculate()
+            df['bollinger_upper'] = bb_upper
+            df['bollinger_lower'] = bb_lower
+
+            # 计算 MACD（legacy）
+            logger.info("Calculating MACD (legacy)...")
+            macd_line, macd_signal = MACD(
+                df['close'], self.params['macd_slow'], self.params['macd_fast'], self.params['macd_signal']
+            ).calculate()
+            df['macd'] = macd_line
+            df['macd_signal'] = macd_signal
+
+            # 计算 ATR（legacy）
+            logger.info("Calculating ATR (legacy)...")
+            df['atr'] = AverageTrueRange(df['high'], df['low'], df['close'], self.params['atr_window']).calculate()
+
+            # 计算 VWAP（legacy）
+            logger.info("Calculating VWAP (legacy)...")
+            if 'volume' in df.columns and df['volume'].sum() > 0:
+                df['vwap'] = VWAP(df).calculate()
+            else:
+                logger.warning("VWAP skipped due to missing or invalid 'volume' data.")
+                df['vwap'] = 0.0
 
         # 整合指标
         logger.info("Constructing indicators field...")
@@ -160,6 +212,9 @@ class TechnicalIndicator:
 
         # 确保数值型字段不含 NaN
         numeric_columns = ['rsi', 'bollinger_upper', 'bollinger_lower', 'macd', 'macd_signal', 'atr', 'vwap']
+        for col in numeric_columns:
+            if col not in df.columns:
+                df[col] = 0.0
         df[numeric_columns] = df[numeric_columns].fillna(0)
 
         logger.info("Indicators calculated successfully.")
