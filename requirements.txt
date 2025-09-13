@@ -5,3 +5,10 @@ websocket-client
 python-dotenv
 pyyaml
 logging
+fastapi
+pandas
+pydantic
+python-dotenv
+requests
+ta
+websocket-client
