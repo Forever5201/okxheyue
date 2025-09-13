@@ -1,0 +1,98 @@
+E:\套利机器人\程序>python main.py
+2025-01-03 22:57:40,324 - gui.main_window - INFO - 成功加载交易所配置文件: config\exchange_config.yaml
+2025-01-03 22:57:40,324 - gui.main_window - DEBUG - 交易所配置内容: {'exchanges': {'okx': {'enabled': True, 'api_key': '6623d6ee-ec1a-402f-a750-d74ff6b930d0', 'api_secret': '6081C3FA2CED144782BA66B38C54556F', 'passphrase': 'Yuan971035088@', 'options': {'defaultType': 'swap', 'defaultMarket': 'futures'}, 'testnet': False}}, 'symbols': ['BTC/USDT:USDT', 'ETH/USDT:USDT'], 'common': {'max_retries': 3, 'retry_delay': 1, 'timeout': 30, 'enable_rate_limit': True, 'log_level': 'DEBUG'}}
+2025-01-03 22:57:40,325 - gui.main_window - INFO - 成功加载通用配置文件: config\config.yaml
+2025-01-03 22:57:40,326 - gui.main_window - DEBUG - 通用配置内容: {'exchanges': {'okx': {'enabled': True, 'api_key': '6623d6ee-ec1a-402f-a750-d74ff6b930d0', 'api_secret': '6081C3FA2CED144782BA66B38C54556F', 'passphrase': 'Yuan971035088@', 'testnet': False}}, 'common': {'use_proxy': False, 'proxy': {'http': '', 'https': ''}, 'test_mode': False}, 'symbols': ['BTC/USDT', 'ETH/USDT'], 'strategy': {'min_rate_diff': 0.001, 'position_size': 0.01, 'max_position_value': 100000, 'max_funding_rate': 0.01, 'check_interval': 60, 'max_leverage': 3, 'min_margin': 100}}
+2025-01-03 22:57:40,326 - gui.main_window - INFO - 成功合并配置文件
+2025-01-03 22:57:40,326 - gui.main_window - DEBUG - 合并后的配置: {'exchanges': {'okx': {'enabled': True, 'api_key': '6623d6ee-ec1a-402f-a750-d74ff6b930d0', 'api_secret': '6081C3FA2CED144782BA66B38C54556F', 'passphrase': 'Yuan971035088@', 'options': {'defaultType': 'swap', 'defaultMarket': 'futures'}, 'testnet': False}}, 'common': {'use_proxy': False, 'proxy': {'http': '', 'https': ''}, 'test_mode': False}, 'symbols': ['BTC/USDT:USDT', 'ETH/USDT:USDT'], 'strategy': {'min_rate_diff': 0.001, 'position_size': 0.01, 'max_position_value': 100000, 'max_funding_rate': 0.01, 'check_interval': 60, 'max_leverage': 3, 'min_margin': 100}}
+2025-01-03 22:57:40,367 - asyncio - DEBUG - Using proactor: IocpProactor
+2025-01-03 22:57:40,501 - core.controller - INFO - 开始启动控制器...
+2025-01-03 22:57:40,501 - core.controller - INFO - 开始初始化 OKX 交易所
+2025-01-03 22:57:40,502 - httpx - DEBUG - load_ssl_context verify=True cert=None trust_env=True http2=False
+2025-01-03 22:57:40,503 - httpx - DEBUG - load_verify_locations cafile='C:\\Users\\sbzcl\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem'
+2025-01-03 22:57:40,666 - httpx - DEBUG - load_ssl_context verify=True cert=None trust_env=True http2=False
+2025-01-03 22:57:40,667 - httpx - DEBUG - load_verify_locations cafile='C:\\Users\\sbzcl\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem'
+2025-01-03 22:57:40,828 - httpx - DEBUG - load_ssl_context verify=True cert=None trust_env=True http2=False
+2025-01-03 22:57:40,829 - httpx - DEBUG - load_verify_locations cafile='C:\\Users\\sbzcl\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem'
+2025-01-03 22:57:40,990 - httpx - DEBUG - load_ssl_context verify=True cert=None trust_env=True http2=False
+2025-01-03 22:57:40,992 - httpx - DEBUG - load_verify_locations cafile='C:\\Users\\sbzcl\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem'
+2025-01-03 22:57:41,153 - httpx - DEBUG - load_ssl_context verify=True cert=None trust_env=True http2=False
+2025-01-03 22:57:41,154 - httpx - DEBUG - load_verify_locations cafile='C:\\Users\\sbzcl\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem'
+2025-01-03 22:57:41,314 - httpx - DEBUG - load_ssl_context verify=True cert=None trust_env=True http2=False
+2025-01-03 22:57:41,315 - httpx - DEBUG - load_verify_locations cafile='C:\\Users\\sbzcl\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem'
+2025-01-03 22:57:41,476 - httpx - DEBUG - load_ssl_context verify=True cert=None trust_env=True http2=False
+2025-01-03 22:57:41,477 - httpx - DEBUG - load_verify_locations cafile='C:\\Users\\sbzcl\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem'
+2025-01-03 22:57:41,636 - httpx - DEBUG - load_ssl_context verify=True cert=None trust_env=True http2=False
+2025-01-03 22:57:41,637 - httpx - DEBUG - load_verify_locations cafile='C:\\Users\\sbzcl\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem'
+2025-01-03 22:57:41,797 - httpx - DEBUG - load_ssl_context verify=True cert=None trust_env=True http2=False
+2025-01-03 22:57:41,798 - httpx - DEBUG - load_verify_locations cafile='C:\\Users\\sbzcl\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem'
+2025-01-03 22:57:41,959 - core.controller - INFO - 初始化 OKX 交易所成功
+2025-01-03 22:57:41,960 - httpcore.connection - DEBUG - connect_tcp.started host='127.0.0.1' port=10808 local_address=None timeout=5.0 socket_options=None
+2025-01-03 22:57:41,960 - core.controller - INFO - 控制器启动成功
+2025-01-03 22:57:41,961 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000029901C20D70>
+2025-01-03 22:57:41,962 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'CONNECT']>
+2025-01-03 22:57:41,962 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-01-03 22:57:41,962 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'CONNECT']>
+2025-01-03 22:57:41,963 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-01-03 22:57:41,963 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'CONNECT']>
+2025-01-03 22:57:41,963 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'Connection established', [])
+2025-01-03 22:57:41,964 - httpcore.proxy - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000029900CB90A0> server_hostname='www.okx.com' timeout=5.0
+2025-01-03 22:57:43,973 - httpcore.proxy - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000029901C1CCD0>
+2025-01-03 22:57:43,974 - httpcore.http2 - DEBUG - send_connection_init.started request=<Request [b'GET']>
+2025-01-03 22:57:43,975 - httpcore.http2 - DEBUG - send_connection_init.complete
+2025-01-03 22:57:43,975 - httpcore.http2 - DEBUG - send_request_headers.started request=<Request [b'GET']> stream_id=1
+2025-01-03 22:57:43,976 - hpack.hpack - DEBUG - Adding (b':method', b'GET') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,976 - hpack.hpack - DEBUG - Encoding 2 with 7 bits
+2025-01-03 22:57:43,976 - hpack.hpack - DEBUG - Adding (b':authority', b'www.okx.com') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,976 - hpack.hpack - DEBUG - Encoding 1 with 6 bits
+2025-01-03 22:57:43,977 - hpack.hpack - DEBUG - Encoding 9 with 7 bits
+2025-01-03 22:57:43,977 - hpack.hpack - DEBUG - Adding (b':scheme', b'https') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,977 - hpack.hpack - DEBUG - Encoding 7 with 7 bits
+2025-01-03 22:57:43,977 - hpack.hpack - DEBUG - Adding (b':path', b'/api/v5/market/ticker?instId=BTC/USDT:USDT') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,978 - hpack.hpack - DEBUG - Encoding 4 with 6 bits
+2025-01-03 22:57:43,978 - hpack.hpack - DEBUG - Encoding 33 with 7 bits
+2025-01-03 22:57:43,978 - hpack.hpack - DEBUG - Adding (b'accept', b'*/*') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,978 - hpack.hpack - DEBUG - Encoding 19 with 6 bits
+2025-01-03 22:57:43,978 - hpack.hpack - DEBUG - Encoding 3 with 7 bits
+2025-01-03 22:57:43,979 - hpack.hpack - DEBUG - Adding (b'accept-encoding', b'gzip, deflate') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,979 - hpack.hpack - DEBUG - Encoding 16 with 7 bits
+2025-01-03 22:57:43,979 - hpack.hpack - DEBUG - Adding (b'user-agent', b'python-httpx/0.26.0') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,979 - hpack.hpack - DEBUG - Encoding 58 with 6 bits
+2025-01-03 22:57:43,980 - hpack.hpack - DEBUG - Encoding 14 with 7 bits
+2025-01-03 22:57:43,980 - hpack.hpack - DEBUG - Adding (b'content-type', b'application/json') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,980 - hpack.hpack - DEBUG - Encoding 31 with 6 bits
+2025-01-03 22:57:43,981 - hpack.hpack - DEBUG - Encoding 11 with 7 bits
+2025-01-03 22:57:43,981 - hpack.hpack - DEBUG - Adding (b'ok-access-key', b'6623d6ee-ec1a-402f-a750-d74ff6b930d0') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,981 - hpack.hpack - DEBUG - Encoding 10 with 7 bits
+2025-01-03 22:57:43,982 - hpack.hpack - DEBUG - Encoding 26 with 7 bits
+2025-01-03 22:57:43,982 - hpack.hpack - DEBUG - Adding (b'ok-access-sign', b'2e5q3YQaT4QlKo+BlO3sWdwe6Niq5eVv4nbEw6pSAiU=') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,982 - hpack.hpack - DEBUG - Encoding 10 with 7 bits
+2025-01-03 22:57:43,982 - hpack.hpack - DEBUG - Encoding 35 with 7 bits
+2025-01-03 22:57:43,983 - hpack.hpack - DEBUG - Adding (b'ok-access-timestamp', b'2025-01-03T14:57:41.960Z') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,983 - hpack.hpack - DEBUG - Encoding 13 with 7 bits
+2025-01-03 22:57:43,983 - hpack.hpack - DEBUG - Encoding 18 with 7 bits
+2025-01-03 22:57:43,983 - hpack.hpack - DEBUG - Adding (b'ok-access-passphrase', b'Yuan971035088@') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,984 - hpack.hpack - DEBUG - Encoding 14 with 7 bits
+2025-01-03 22:57:43,984 - hpack.hpack - DEBUG - Encoding 11 with 7 bits
+2025-01-03 22:57:43,984 - hpack.hpack - DEBUG - Adding (b'x-simulated-trading', b'0') to the header table, sensitive:False, huffman:True
+2025-01-03 22:57:43,984 - hpack.hpack - DEBUG - Encoding 14 with 7 bits
+2025-01-03 22:57:43,985 - hpack.hpack - DEBUG - Encoding 1 with 7 bits
+2025-01-03 22:57:43,985 - hpack.hpack - DEBUG - Encoded header block to b"\x82A\x89\xf1\xe3\xc2\xe7\xeb\xe5r\x1e\x9f\x87D\xa1`u\x99\x8e\xed\xb1H\xec\xeaT\xb0\x93\x13\xa9l\xff\rR\x13\x92H.\xef\xbc\xc7\r\xd7\xf7\xdc\xe1\xba\xfe\xffS\x83\xf9c\xe7\x90z\x8e\xaf\xd2g=KN\x94\xd7\xe5\x80.'\x17\x07_\x8b\x1du\xd0b\r&=LtA\xea@\x8a?U\x86B\x15\x08[\xa9}\x7f\x9aq\xc13#\x85*\xc5 F\xb3@\x14\xab\r\xd6\xc0\xb4\x8e\xb5,\xaeF\xfb \x90\x1f@\x8a?U\x86B\x15\x08Y\x06\x9a\xaf\xa3\x11[\xec\xcf=\x83\xde\xd6\xca3\x1f\xfd\xdd\xa3S(\xe5'\x82\xb9\xa4\xdd\x9b/\x1e\xedU\x1e\x0f\x0eW\xba\x13p\x83@\x8d?U\x86B\x15\x08Y&\xa4\xa8H\xe9\xaf\x92\x10\x04\xda\xc0\n\xc0gxZ\xb8\xdb\xb7\x1a\n\xef\xb8\x0f\xdf@\x8e?U\x86B\x15\x08Z\xb1\xa1\x15\xcf`\xd0_\x8b\xe7h\xea}\xd0\x81\x96\xc0\xf3\xdf\xfa@\x8e\xf2\xb2\rM\xb4\r%\x91d\xd89\rT\xdf\x81\x07"
+2025-01-03 22:57:43,986 - httpcore.http2 - DEBUG - send_request_headers.complete
+2025-01-03 22:57:43,987 - httpcore.http2 - DEBUG - send_request_body.started request=<Request [b'GET']> stream_id=1
+2025-01-03 22:57:43,987 - httpcore.http2 - DEBUG - send_request_body.complete
+2025-01-03 22:57:43,987 - httpcore.http2 - DEBUG - receive_response_headers.started request=<Request [b'GET']> stream_id=1
+2025-01-03 22:57:46,730 - httpcore.http2 - DEBUG - receive_remote_settings.started
+2025-01-03 22:57:46,731 - httpcore.http2 - DEBUG - receive_remote_settings.complete return_value=<RemoteSettingsChanged changed_settings:{ChangedSetting(setting=3, original_value=None, new_value=100), ChangedSetting(setting=4, original_value=65535, new_value=65536), ChangedSetting(setting=5, original_value=16384, new_value=16777215)}>
+2025-01-03 22:57:46,732 - hpack.hpack - DEBUG - Decoding b'?\xe1\x1f\x88a\x96\xc3a\xbe\x94\x03*e\x1dJ\x08\x02m@\xb5q\xb7n\t\xb51h\xdf_\x8b\x1du\xd0b\r&=LtA\xea{\x8b\x84\x84-i[\x05D<\x86\xaao{\x85\xd5a\xa65_@\x86\x8dj\x0eA\xd0_\x84-Qp\xdd@\x90\xf2\xb1\x0fRKRVO\xaa\xca\xb1\xebI\x8fR?\x85\xa8\xe8\xa8\xd2\xcb\xbe@\x8c\xf2\xb7\x94!j\xec:JD\x98\xf5\x7f\x8a\x0f\xda\x94\x9eB\xc1\x1d\x07\'_\xbeX\xa1\xa8\xeb\x10d\x9c\xbfJTu\x90\x93\xd8_\xa5)\x1f\x95\x871`\x07\xd2\x94\xda\x84\xada{\x8e\x83H4\x97@\x85\xae\xc1\xcdH\xff\x86\xa8\xeb\x10d\x9c\xbfd\x010@\x8b\xf2\xb4\xb6\x0e\x92\xacz\xd2c\xd4\x8f\x89\xdd\x0e\x8c\x1a\xb6\xe4\xc5\x93O~\x04DENY@\x88\xf2\xb4v\x1f\xa9l4\x9f\x010x\x9a\xa4~V\x1c\xc5\x81\x90\xb6\xcb\x80\x00>\xd45D\xa2\xd9\x0b\xba\xd8\xef\x9e\x91\x9a\xa4\x7fZ\x83\x9b\xd9\xab@\x8a$\xab\x10d\x9c\xab!#M\xa8\x86\xbf\xcfL:2^w\xffE\x8a"K\x14t\xc0\xd0\xe2\xcf\x93\x86N>\xbbl\x07\x8cyGy\x1c+\x9c\x97p/\x1b\x9a#\xde|t\xb9\xc8\xbea\xdbm\xba\xb6,\x17Ym\xf0\xb8&\x9bX+\x81p\xae\x15\xbc\xdb0\xf7\xf1\x9b\xf1|\xfb?n\xbd\x8b\xd3\xbf\x9c\xf9\x9b\x1e\xcdW\xae\xef7\xed\xd6h\xf0\xf4U\xaf\xd4R\xde\xb4\x0b\xc5\xebs\xeb\xce\x9a88\xfe\xbb\xed[\xab\x05\xe8\xc3\xd2\x8at\xb5\xfb\x99\xc6Z\xd5\x8b\x86\xfb\xd5\xf3\xf3\xbfd>>\xd4\xaci\x9e\x06>\xd4/\x9a\xcdaQ\x06\x1b\r\xf4\xa0\x19[(\xeaXM\xa8\x16\xee\t\xdb\x82mLZ7\xfd\xa9!\xe9\x19\xaa\x81s\xf5\xf2\xb9\x0fO\xda\x98\xd2\x9a\xf5UG\xaf\xb57\x14\x96\xd8_\xb57\x0e\x92\xee2K\x06\x93\xd4_v\x87%\x07\xb6Ih\x1d\x85@\x85$\xabX?_\x8fzR3#\xad\xb8\xec\x83y\xc7H5\xb7e\xbd'
+2025-01-03 22:57:46,733 - hpack.hpack - DEBUG - Decoded 4096, consumed 3 bytes
+2025-01-03 22:57:46,734 - hpack.table - DEBUG - Resizing header table to 4096 from 4096
+2025-01-03 22:57:46,735 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2025-01-03 22:57:46,735 - hpack.hpack - DEBUG - Decoded (b':status', b'200'), consumed 1
+2025-01-03 22:57:46,735 - hpack.hpack - DEBUG - Decoded 33, consumed 1 bytes
+2025-01-03 22:57:46,736 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2025-01-03 22:57:46,736 - hpack.hpack - DEBUG - Decoded (b'date', b'Fri, 03 Jan 2025 14:57:25 GMT'), total consumed 24 bytes, indexed True
+2025-01-03 22:57:46,736 - hpack.hpack - DEBUG - Decoded 31, consumed 1 bytes
+2025-01-03 22:57:46,737 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+
+E:\套利机器人\程序>

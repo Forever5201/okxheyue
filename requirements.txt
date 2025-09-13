@@ -1,0 +1,7 @@
+pandas
+ta
+requests
+websocket-client
+python-dotenv
+pyyaml
+logging

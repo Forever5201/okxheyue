@@ -1,0 +1,49 @@
+timeframes:
+  midterm:
+    - 4H
+    - 6H
+    - 12H
+  longterm:
+    - 1D
+ 
+
+data_sources:
+  mark_price: false
+  actual_price: true
+
+kline_config:
+  # 中期周期配置
+  4H:
+    fetch_count: 100
+    output_count: 70
+  6H:
+    fetch_count: 100
+    output_count: 70
+  12H:
+    fetch_count: 100
+    output_count: 70
+  # 长期周期配置
+  1D:
+    fetch_count: 100
+    output_count: 70
+ 
+
+indicators:
+  midterm:
+    rsi_window: 14
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    bollinger_window: 20
+    bollinger_dev: 2
+    atr_window: 14
+    volume_rsi_window: 14
+  longterm:
+    rsi_window: 21
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    bollinger_window: 30
+    bollinger_dev: 2
+    atr_window: 21
+    volume_rsi_window: 21
