@@ -63,7 +63,7 @@ def test_okx_connection():
         market_api = Market()
         
         # 测试获取BTC价格
-        result = market_api.tickers(instType="SWAP", instId="BTC-USD-SWAP")
+        result = market_api.get_tickers(instType="SWAP")
         
         if result and result.get('data'):
             price_data = result['data'][0]

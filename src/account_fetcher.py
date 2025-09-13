@@ -59,7 +59,7 @@ class AccountFetcher:
             dict: 账户详细余额数据
         """
         try:
-            response = self.client.get_account_balance()
+            response = self.client.get_balance()
             logger.debug(f"Raw account balance response: {json.dumps(response, indent=2)}")
             
             try:

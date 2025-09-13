@@ -106,7 +106,7 @@ class EnhancedTechnicalIndicator:
         """计算随机指标"""
         try:
             stoch_k = ta.momentum.stoch(data['high'], data['low'], data['close'], window=k_period, smooth_window=smooth)
-            stoch_d = ta.momentum.stoch_signal(data['high'], data['low'], data['close'], window=k_period, smooth_window=smooth, window_sign=d_period)
+            stoch_d = ta.momentum.stoch_signal(data['high'], data['low'], data['close'], window=k_period, smooth_window=d_period)
             
             data['Stoch_K'] = stoch_k
             data['Stoch_D'] = stoch_d
