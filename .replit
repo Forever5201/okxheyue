@@ -5,3 +5,46 @@ expertMode = true
 [nix]
 channel = "stable-25_05"
 packages = ["glibcLocales", "libxcrypt", "libyaml"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "AI Trading System"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "System Test"
+
+[[workflows.workflow]]
+name = "AI Trading System"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python simple_main.py"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "System Test"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python test_system.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[ports]]
+localPort = 5000
+externalPort = 80

@@ -1,4 +1,4 @@
-from okx.Account import AccountAPI
+from okx.api import Account as AccountAPI
 from src.logger import setup_logger
 import json
 

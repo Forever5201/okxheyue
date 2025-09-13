@@ -1,0 +1,185 @@
+# AI交易系统增强配置文件
+# Enhanced Configuration for AI Trading System
+
+# 时间线配置 - 定义要获取的K线时间周期
+timeframes:
+  short_term:    # 短期
+    - 1m         # 1分钟
+    - 5m         # 5分钟
+    - 15m        # 15分钟
+    - 30m        # 30分钟
+  medium_term:   # 中期  
+    - 1H         # 1小时
+    - 2H         # 2小时
+    - 4H         # 4小时
+    - 6H         # 6小时
+  long_term:     # 长期
+    - 12H        # 12小时
+    - 1D         # 1天
+    - 3D         # 3天
+    - 1W         # 1周
+
+# K线数据获取配置
+kline_config:
+  # 短期配置
+  1m:
+    fetch_count: 200    # 获取数量
+    output_count: 100   # 输出数量
+    save_format: "parquet"  # 保存格式: csv, parquet
+  5m:
+    fetch_count: 200
+    output_count: 100
+    save_format: "parquet"
+  15m:
+    fetch_count: 200
+    output_count: 100
+    save_format: "parquet"
+  30m:
+    fetch_count: 200
+    output_count: 100
+    save_format: "parquet"
+  # 中期配置
+  1H:
+    fetch_count: 200
+    output_count: 150
+    save_format: "parquet"
+  2H:
+    fetch_count: 200
+    output_count: 150
+    save_format: "parquet"
+  4H:
+    fetch_count: 200
+    output_count: 100
+    save_format: "parquet"
+  6H:
+    fetch_count: 150
+    output_count: 100
+    save_format: "parquet"
+  # 长期配置
+  12H:
+    fetch_count: 150
+    output_count: 80
+    save_format: "parquet"
+  1D:
+    fetch_count: 120
+    output_count: 70
+    save_format: "parquet"
+  3D:
+    fetch_count: 100
+    output_count: 60
+    save_format: "parquet"
+  1W:
+    fetch_count: 80
+    output_count: 50
+    save_format: "parquet"
+
+# 技术指标配置
+indicators:
+  # 通用指标配置
+  common:
+    # 移动平均线
+    sma_periods: [5, 10, 20, 50, 100, 200]
+    ema_periods: [5, 10, 20, 50, 100, 200]
+    # MACD
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    # RSI
+    rsi_period: 14
+    # 布林带
+    bb_period: 20
+    bb_std: 2.0
+    # ATR (平均真实范围)
+    atr_period: 14
+    # 成交量RSI
+    volume_rsi_period: 14
+    # 随机指标
+    stoch_k: 14
+    stoch_d: 3
+    stoch_smooth: 3
+    # 威廉指标
+    williams_r_period: 14
+    # CCI (商品通道指数)
+    cci_period: 20
+    # 动量指标
+    momentum_period: 10
+    # ROC (变化率)
+    roc_period: 12
+  
+  # 短期指标配置
+  short_term:
+    rsi_period: 14
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    bb_period: 20
+    bb_std: 2.0
+    atr_period: 14
+    volume_rsi_period: 14
+    
+  # 中期指标配置  
+  medium_term:
+    rsi_period: 14
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    bb_period: 20
+    bb_std: 2.0
+    atr_period: 14
+    volume_rsi_period: 14
+    
+  # 长期指标配置
+  long_term:
+    rsi_period: 21
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    bb_period: 30
+    bb_std: 2.0
+    atr_period: 21
+    volume_rsi_period: 21
+
+# 数据源配置
+data_sources:
+  mark_price: false      # 是否获取标记价格
+  actual_price: true     # 是否获取实际价格
+  funding_rate: true     # 是否获取资金费率
+  open_interest: true    # 是否获取未平仓合约
+
+# 数据存储配置
+storage:
+  base_directory: "kline_data"  # 基础存储目录
+  create_subdirs: true          # 是否创建子目录
+  file_naming_pattern: "{symbol}_{timeframe}_{date}"
+  backup_enabled: true          # 是否启用备份
+  backup_directory: "kline_data_backup"
+  compression: true             # 是否压缩存储
+
+# AI分析配置
+ai_analysis:
+  model: "gpt-4"               # 使用的AI模型
+  max_tokens: 4000             # 最大token数
+  temperature: 0.3             # 创造性参数
+  prompt_template_file: "prompts/trading_analysis_prompt.txt"
+  
+# 风险控制配置
+risk_management:
+  max_position_size: 0.1       # 最大仓位大小 (账户余额的10%)
+  max_daily_trades: 5          # 每日最大交易次数
+  stop_loss_percentage: 2.0    # 止损百分比
+  take_profit_percentage: 4.0  # 止盈百分比
+  max_drawdown: 5.0           # 最大回撤百分比
+
+# 监控配置
+monitoring:
+  update_interval: 60          # 更新间隔(秒)
+  price_change_threshold: 1.0  # 价格变动阈值(%)
+  volume_spike_threshold: 2.0  # 成交量激增阈值
+
+# MCP服务配置
+mcp_service:
+  host: "127.0.0.1"
+  port: 8000
+  max_file_size: 10            # MB
+  allowed_extensions: [".csv", ".parquet", ".json"]
+  rate_limit: 100              # 每分钟请求限制
