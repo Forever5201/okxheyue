@@ -107,9 +107,14 @@ class SimpleDataManager:
                 "files": [relative_path]
             }
             
-            # 假设MCP服务在本地运行
+            # 使用配置中的MCP服务地址
+            config = ConfigLoader('config/enhanced_config.yaml').load_config()
+            mcp_config = config.get('mcp_service', {})
+            host = mcp_config.get('host', '127.0.0.1')
+            port = mcp_config.get('port', 5000)
+            
             response = requests.post(
-                "http://localhost:5000/authorize",
+                f"http://{host}:{port}/authorize",
                 json=data,
                 headers=headers,
                 timeout=5
@@ -299,8 +304,14 @@ class SimpleDataManager:
                 "files": files_to_authorize
             }
             
+            # 使用配置中的MCP服务地址
+            config = ConfigLoader('config/enhanced_config.yaml').load_config()
+            mcp_config = config.get('mcp_service', {})
+            host = mcp_config.get('host', '127.0.0.1')
+            port = mcp_config.get('port', 5000)
+            
             response = requests.post(
-                "http://localhost:5000/authorize",
+                f"http://{host}:{port}/authorize",
                 json=data,
                 headers=headers,
                 timeout=10
@@ -324,8 +335,14 @@ class SimpleDataManager:
             
             headers = {"x-api-key": mcp_api_key}
             
+            # 使用配置中的MCP服务地址
+            config = ConfigLoader('config/enhanced_config.yaml').load_config()
+            mcp_config = config.get('mcp_service', {})
+            host = mcp_config.get('host', '127.0.0.1')
+            port = mcp_config.get('port', 5000)
+            
             response = requests.get(
-                "http://localhost:5000/list_allowed_files",
+                f"http://{host}:{port}/list_allowed_files",
                 headers=headers,
                 timeout=5
             )

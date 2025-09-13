@@ -4,12 +4,33 @@ Simplified AI Trading System Main Application
 """
 
 import os
+import time
+import threading
 from dotenv import load_dotenv
 from src.logger import setup_logger
 from src.simple_data_manager import SimpleDataManager
+from src.config_loader import ConfigLoader
 from src.mcp_service import app as mcp_app
 
 logger = setup_logger()
+
+def start_mcp_service_in_thread():
+    """在后台线程中启动MCP服务"""
+    try:
+        config = ConfigLoader('config/enhanced_config.yaml').load_config()
+        mcp_config = config.get('mcp_service', {})
+        host = mcp_config.get('host', '0.0.0.0')
+        port = mcp_config.get('port', 5000)
+        
+        import uvicorn
+        uvicorn.run(
+            mcp_app,
+            host=host,
+            port=port,
+            log_level="info"
+        )
+    except Exception as e:
+        logger.error(f"MCP service error: {e}")
 
 def main():
     """主函数"""
@@ -30,11 +51,25 @@ def main():
             print("请确保设置了所有必要的API密钥")
             return
         
-        # 初始化数据管理器
-        print("🔧 初始化系统...")
+        # 1. 先启动MCP服务（后台线程）
+        print("🌐 启动MCP服务...")
+        config = ConfigLoader('config/enhanced_config.yaml').load_config()
+        mcp_config = config.get('mcp_service', {})
+        host = mcp_config.get('host', '127.0.0.1')
+        port = mcp_config.get('port', 5000)
+        
+        mcp_thread = threading.Thread(target=start_mcp_service_in_thread, daemon=True)
+        mcp_thread.start()
+        
+        # 等待MCP服务启动
+        print("⏳ 等待MCP服务启动...")
+        time.sleep(3)
+        
+        # 2. 初始化数据管理器（会自动授权现有文件）
+        print("🔧 初始化数据管理器...")
         data_manager = SimpleDataManager()
         
-        # 获取一次数据
+        # 3. 获取新数据（会自动授权新文件）
         print("📊 获取市场数据...")
         results = data_manager.fetch_and_process_data()
         
@@ -53,22 +88,19 @@ def main():
         account_info = data_manager.get_account_summary()
         market_info = data_manager.get_market_summary()
         
-        # 启动MCP服务
-        print("\n🌐 启动MCP服务 (端口 5000)...")
+        # 显示MCP服务状态
+        print(f"\n🌐 MCP服务运行在: http://{host}:{port}")
         print("📡 AI可以通过MCP协议访问交易数据")
         print("\n" + "=" * 60)
         print("系统运行中... 按 Ctrl+C 停止")
         print("=" * 60)
         
-        # 启动FastAPI服务
-        import uvicorn
-        uvicorn.run(
-            "simple_main:mcp_app",
-            host="0.0.0.0",
-            port=5000,
-            log_level="info",
-            reload=False
-        )
+        # 保持主程序运行
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\n🛑 用户终止程序")
         
     except KeyboardInterrupt:
         print("\n🛑 用户终止程序")
