@@ -91,7 +91,7 @@ class AIOrchestrator:
     def _load_system_prompt(self) -> str:
         """加载AI系统提示词"""
         try:
-            prompt_path = Path("config/ai_trading_system_prompt.md")
+            prompt_path = Path("config/AI_Trading_System_Prompt_V1.md")
             if prompt_path.exists():
                 with open(prompt_path, 'r', encoding='utf-8') as f:
                     return f.read()
@@ -105,7 +105,7 @@ class AIOrchestrator:
     def _load_tools_definition(self) -> Dict:
         """加载工具定义"""
         try:
-            tools_path = Path("config/ai_trading_system_tools.json")
+            tools_path = Path("config/AI_Trading_System_Tools.json")
             if tools_path.exists():
                 with open(tools_path, 'r', encoding='utf-8') as f:
                     return json.load(f)
