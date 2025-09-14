@@ -19,8 +19,7 @@ from typing import Dict, Any
 from src.logger import setup_logger
 from src.enhanced_data_manager import EnhancedDataManager
 from src.mcp_service import app as mcp_app
-from src.message_queue import MessageQueueManager
-from src.analysis_agent import AnalysisAgent
+from src.ai_orchestrator import AIOrchestrator
 
 logger = setup_logger()
 
@@ -55,37 +54,29 @@ class AITradingSystem:
         self.last_update = None
     
     def _init_agent_system(self):
-        """初始化代理系统"""
+        """初始化AI分析系统 - 使用设计文档要求的Orchestrator模式"""
         try:
             # 获取配置
             config = self.data_manager.config
             
-            # 检查代理系统是否启用
-            agent_system_config = config.get('agent_system', {})
-            if not agent_system_config.get('enabled', False):
-                logger.info("Agent system is disabled in configuration")
-                self.message_queue = None
-                self.analysis_agent = None
+            # 检查AI分析系统是否启用
+            ai_analysis_config = config.get('ai_analysis', {})
+            if not ai_analysis_config.get('enabled', True):
+                logger.info("AI analysis system is disabled in configuration")
+                self.ai_orchestrator = None
                 return
             
-            # 初始化消息队列
-            mq_config = config.get('message_queue', {})
-            self.message_queue = MessageQueueManager(mq_config)
-            logger.info("Message queue initialized")
-            
-            # 初始化分析代理
-            analysis_enabled = config.get('ai_analysis', {}).get('analysis_agent', {}).get('enabled', False)
-            if analysis_enabled:
-                self.analysis_agent = AnalysisAgent(config, self.message_queue)
-                logger.info("Analysis agent initialized")
-            else:
-                self.analysis_agent = None
-                logger.info("Analysis agent is disabled")
+            # 初始化AI编排器（按照设计文档的项目经理模式）
+            try:
+                self.ai_orchestrator = AIOrchestrator()
+                logger.info("AI Orchestrator initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize AI Orchestrator: {e}")
+                self.ai_orchestrator = None
                 
         except Exception as e:
-            logger.error(f"Failed to initialize agent system: {e}")
-            self.message_queue = None
-            self.analysis_agent = None
+            logger.error(f"Failed to initialize AI analysis system: {e}")
+            self.ai_orchestrator = None
         
     def fetch_all_data(self):
         """获取所有时间周期的数据"""
@@ -202,77 +193,85 @@ class AITradingSystem:
             logger.error(f"Error during cleanup: {e}")
     
     def _trigger_analysis_if_enabled(self, data_results: Dict[str, Any]):
-        """如果代理系统启用，触发分析请求"""
-        if not hasattr(self, 'message_queue') or not self.message_queue or not hasattr(self, 'analysis_agent') or not self.analysis_agent:
+        """如果AI分析系统启用，触发分析请求"""
+        if not hasattr(self, 'ai_orchestrator') or not self.ai_orchestrator:
+            logger.debug("AI Orchestrator not available, skipping analysis")
             return
         
         try:
-            # 构建分析触发数据
-            trigger_data = {
-                "trigger_type": "data_update",
-                "timestamp": datetime.utcnow().isoformat(),
-                "data_summary": {
-                    "successful_timeframes": len(data_results.get('success', [])),
-                    "failed_timeframes": len(data_results.get('failed', [])),
-                    "timeframes": [tf.get('timeframe') for tf in data_results.get('success', [])]
-                }
-            }
+            # 构建分析请求
+            successful_timeframes = len(data_results.get('success', []))
+            failed_timeframes = len(data_results.get('failed', []))
+            timeframes = [tf.get('timeframe') for tf in data_results.get('success', [])]
             
-            # 发布分析请求消息
-            topics = self.data_manager.config.get('message_queue', {}).get('topics', {})
-            analysis_topic = topics.get('analysis_request', 'analysis.request')
+            analysis_request = f"""请分析最新的市场数据。
             
-            message_id = self.message_queue.publish(
-                topic=analysis_topic,
-                payload=trigger_data,
-                sender="ai_trading_system"
-            )
+数据更新摘要：
+- 成功获取 {successful_timeframes} 个时间周期数据
+- 失败 {failed_timeframes} 个时间周期
+- 可用时间周期：{', '.join(timeframes)}
+- 更新时间：{datetime.utcnow().isoformat()}
+
+请基于最新数据进行市场分析，并提供交易建议。"""
+
+            # 使用AI编排器执行分析
+            logger.info("Triggering AI analysis after data update")
+            analysis_result = self.ai_orchestrator.analyze_market(analysis_request)
             
-            logger.info(f"Published analysis request {message_id} after data update")
+            if analysis_result.get('success', False):
+                logger.info("AI analysis completed successfully")
+                # 这里可以添加对分析结果的处理逻辑
+                self._process_analysis_result(analysis_result)
+            else:
+                logger.error(f"AI analysis failed: {analysis_result.get('error', 'Unknown error')}")
             
         except Exception as e:
             logger.error(f"Failed to trigger analysis: {e}")
     
-    def start_agent_system(self):
-        """启动代理系统"""
-        if not hasattr(self, 'message_queue') or not self.message_queue:
-            logger.info("Agent system not initialized, skipping start")
-            return
-        
+    def _process_analysis_result(self, analysis_result: Dict[str, Any]):
+        """处理分析结果"""
         try:
-            # 启动消息队列
-            self.message_queue.start()
-            logger.info("Message queue started")
+            # 记录分析结果
+            analysis = analysis_result.get('analysis', 'No analysis available')
+            iterations = analysis_result.get('iterations', 0)
             
-            # 启动分析代理
-            if hasattr(self, 'analysis_agent') and self.analysis_agent:
-                self.analysis_agent.start()
-                logger.info("Analysis agent started")
+            logger.info(f"AI Analysis Result (after {iterations} iterations):")
+            logger.info(f"Analysis: {analysis}")
             
-            logger.info("Agent system started successfully")
+            # 这里可以添加更多的结果处理逻辑，比如：
+            # - 保存分析结果到文件
+            # - 发送通知
+            # - 触发交易动作等
             
         except Exception as e:
-            logger.error(f"Failed to start agent system: {e}")
+            logger.error(f"Error processing analysis result: {e}")
     
-    def stop_agent_system(self):
-        """停止代理系统"""
-        if not hasattr(self, 'message_queue') or not self.message_queue:
+    def start_ai_analysis_system(self):
+        """启动AI分析系统"""
+        if not hasattr(self, 'ai_orchestrator') or not self.ai_orchestrator:
+            logger.info("AI Orchestrator not initialized, skipping start")
             return
         
         try:
-            # 停止分析代理
-            if hasattr(self, 'analysis_agent') and self.analysis_agent:
-                self.analysis_agent.stop()
-                logger.info("Analysis agent stopped")
-            
-            # 停止消息队列
-            self.message_queue.stop()
-            logger.info("Message queue stopped")
-            
-            logger.info("Agent system stopped successfully")
+            # AI编排器不需要显式启动，它是基于调用的模式
+            # 验证系统状态
+            status = self.ai_orchestrator.get_analysis_status()
+            logger.info("AI Analysis System status verified")
+            logger.info(f"Available tools: {status.get('available_tools', [])}")
+            logger.info("AI Analysis System ready for use")
             
         except Exception as e:
-            logger.error(f"Failed to stop agent system: {e}")
+            logger.error(f"Failed to start AI analysis system: {e}")
+    
+    def stop_ai_analysis_system(self):
+        """停止AI分析系统"""
+        try:
+            # AI编排器不需要显式停止
+            # 记录停止信息
+            logger.info("AI Analysis System stopped")
+            
+        except Exception as e:
+            logger.error(f"Failed to stop AI analysis system: {e}")
     
     def start_scheduler(self):
         """启动定时任务"""
@@ -330,9 +329,9 @@ def main():
         # 设置定时任务
         trading_system.setup_scheduler()
         
-        # 启动代理系统（在数据获取之前，避免消息丢失）
-        print("\n🤖 启动AI代理系统...")
-        trading_system.start_agent_system()
+        # 启动AI分析系统（设计文档要求的Orchestrator模式）
+        print("\n🤖 启动AI分析系统...")
+        trading_system.start_ai_analysis_system()
         
         # 立即运行一次数据获取
         print("\n🔄 执行初始数据获取...")
@@ -370,9 +369,9 @@ def main():
         print(f"\n❌ 系统错误: {e}")
         logger.error(f"System error: {e}")
     finally:
-        # 停止代理系统
+        # 停止AI分析系统
         try:
-            trading_system.stop_agent_system()
+            trading_system.stop_ai_analysis_system()
         except:
             pass
         print("\n👋 AI交易系统已停止")
