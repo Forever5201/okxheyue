@@ -252,6 +252,37 @@ def deauthorize(req: DeauthorizeReq, api_key: str = Depends(get_api_key)):
         logger.error(f"Error deauthorizing files: {e}")
         raise HTTPException(status_code=500, detail="Deauthorization failed")
 
+@app.get("/read_file")
+def read_file(file_path: str, api_key: str = Depends(get_api_key)):
+    """简单的文件读取端点，兼容分析工具"""
+    try:
+        if not is_allowed(file_path):
+            raise HTTPException(status_code=403, detail=f"File not authorized: {file_path}")
+        
+        full_path = safe_join(file_path)
+        if not os.path.exists(full_path):
+            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+        
+        # 读取文件内容
+        with open(full_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 记录审计日志
+        append_audit({
+            "action": "read_file",
+            "file": file_path,
+            "fingerprint": file_fingerprint(full_path),
+            "size": os.path.getsize(full_path)
+        })
+        
+        return content
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reading file {file_path}: {e}")
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+
 @app.post("/get_kline")
 def get_kline(req: KlineReq, api_key: str = Depends(get_api_key)):
     """读取 K 线数据（核心功能）"""

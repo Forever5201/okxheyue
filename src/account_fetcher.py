@@ -12,9 +12,9 @@ class AccountFetcher:
             api_key (str): OKX API密钥
             secret_key (str): OKX API密钥
             passphrase (str): OKX API口令
-            flag (str, optional): 交易模式,'0'为实盘,'1'为模拟盘. Defaults to "1".
+            flag (str, optional): 交易模式,'0'为实盘,'1'为模拟盘. Defaults to "0".
         """
-        # 初始化OKX API客户端
+        # 正确初始化OKX账户API客户端
         self.okx_api = API(api_key, secret_key, passphrase, False, flag)
         self.client = Account(self.okx_api)
 

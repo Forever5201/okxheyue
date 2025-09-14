@@ -2,7 +2,7 @@
   "symbol": "BTC-USD-SWAP",
   "timeframe": "30m",
   "normalized_timeframe": "30m",
-  "timestamp": "2025-09-14T01:39:28.757269Z",
+  "timestamp": "2025-09-14T01:43:46.182760Z",
   "record_count": 100,
   "columns": [
     "timestamp",
