@@ -11598,3 +11598,19 @@ AttributeError: 'str' object has no attribute 'get'
 2025-09-14 07:52:56,666 - TradingBotLogger - INFO - Starting scheduler...
 2025-09-14 07:52:56,714 - TradingBotLogger - INFO - Starting MCP service on port 5000...
 2025-09-14 07:52:56,739 - TradingBotLogger - INFO - MCP Service started (v2.0.0 - 严格按照原始设计)
+2025-09-14 07:53:31,548 - TradingBotLogger - INFO - Loading configuration from config/enhanced_config.yaml
+2025-09-14 07:53:31,568 - TradingBotLogger - INFO - Configuration loaded successfully.
+2025-09-14 07:53:31,569 - TradingBotLogger - INFO - AI Orchestrator initialized successfully
+2025-09-14 07:53:31,570 - TradingBotLogger - INFO - Orchestrator Main initialized successfully
+2025-09-14 07:53:48,987 - TradingBotLogger - INFO - Loading configuration from config/enhanced_config.yaml
+2025-09-14 07:53:49,011 - TradingBotLogger - INFO - Configuration loaded successfully.
+2025-09-14 07:53:49,015 - TradingBotLogger - INFO - AI Orchestrator initialized successfully
+2025-09-14 07:53:49,016 - TradingBotLogger - INFO - Orchestrator Main initialized successfully
+2025-09-14 07:53:49,016 - TradingBotLogger - INFO - Starting analysis request: 分析BTC的技术指标
+2025-09-14 07:53:52,914 - TradingBotLogger - INFO - AI正在调用工具: get_kline_data -> /get_kline
+2025-09-14 07:53:52,915 - TradingBotLogger - INFO - 工具参数: {
+  "timeframe": "1h",
+  "limit": 100
+}
+2025-09-14 07:53:52,920 - TradingBotLogger - ERROR - MCP服务调用失败: 422 Client Error: Unprocessable Entity for url: http://0.0.0.0:5000/get_kline
+2025-09-14 07:53:57,888 - TradingBotLogger - INFO - Analysis completed successfully in 8.87 seconds
