@@ -43,5 +43,5 @@ localPort = 43319
 externalPort = 3002
 
 [deployment]
-deploymentTarget = "autoscale"
+deploymentTarget = "vm"
 run = ["python", "main.py"]
