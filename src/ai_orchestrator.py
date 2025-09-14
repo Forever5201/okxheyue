@@ -59,7 +59,7 @@ class AIOrchestrator:
         
         # AI配置
         self.ai_config = self.config.get('ai_analysis', {}).get('qwen', {})
-        self.api_key = None  # 将从环境变量加载
+        self.api_key: Optional[str] = None  # 将从环境变量加载
         self.base_url = self.ai_config.get('base_url', 'https://dashscope.aliyuncs.com/compatible-mode/v1')
         self.model = self.ai_config.get('model', 'qwen-plus')
         
@@ -67,7 +67,7 @@ class AIOrchestrator:
         self.mcp_config = self.config.get('mcp_service', {})
         self.mcp_host = self.mcp_config.get('host', 'localhost')
         self.mcp_port = self.mcp_config.get('port', 5000)
-        self.mcp_api_key = None  # 将从环境变量加载
+        self.mcp_api_key: Optional[str] = None  # 将从环境变量加载
         
         # 加载AI配置文件
         self.system_prompt = self._load_system_prompt()
@@ -207,7 +207,7 @@ class AIOrchestrator:
                 error_message=error_msg
             )
     
-    def send_ai_request(self, messages: List[Dict], tools: List[Dict] = None) -> Dict:
+    def send_ai_request(self, messages: List[Dict], tools: Optional[List[Dict]] = None) -> Dict:
         """
         发送请求给AI模型
         
@@ -252,7 +252,7 @@ class AIOrchestrator:
             logger.error(f"AI请求失败: {e}")
             raise
     
-    def analyze_market(self, analysis_request: str, context: Dict = None) -> Dict:
+    def analyze_market(self, analysis_request: str, context: Optional[Dict] = None) -> Dict:
         """
         执行市场分析请求
         
@@ -398,7 +398,7 @@ def create_orchestrator() -> AIOrchestrator:
     """创建AI编排器实例"""
     return AIOrchestrator()
 
-def quick_analysis(request: str, context: Dict = None) -> Dict:
+def quick_analysis(request: str, context: Optional[Dict] = None) -> Dict:
     """快速执行分析请求"""
     orchestrator = create_orchestrator()
     return orchestrator.analyze_market(request, context)

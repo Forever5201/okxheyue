@@ -1,6 +1,17 @@
 {
   "files": [
-    "1d/1d.csv"
+    "12h/12h.csv",
+    "15m/15m.csv",
+    "1d/1d.csv",
+    "1h/1h.csv",
+    "1m/1m.csv",
+    "1w/1w.csv",
+    "2h/2h.csv",
+    "30m/30m.csv",
+    "3d/3d.csv",
+    "4h/4h.csv",
+    "5m/5m.csv",
+    "6h/6h.csv"
   ],
-  "last_updated": "2025-09-14T03:43:07.161134Z"
+  "last_updated": "2025-09-14T03:50:09.009308Z"
 }

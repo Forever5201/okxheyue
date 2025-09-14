@@ -1,9 +1,9 @@
 {
   "symbol": "BTC-USD-SWAP",
-  "timeframe": "1d",
-  "normalized_timeframe": "1d",
-  "timestamp": "2025-09-14T03:50:07.170559Z",
-  "record_count": 70,
+  "timeframe": "1m",
+  "normalized_timeframe": "1m",
+  "timestamp": "2025-09-14T03:49:58.397513Z",
+  "record_count": 100,
   "columns": [
     "timestamp",
     "open",
@@ -46,6 +46,6 @@
     "BB_Breakout_Lower"
   ],
   "file_paths": {
-    "combined": "1d/1d.csv"
+    "combined": "1m/1m.csv"
   }
 }
