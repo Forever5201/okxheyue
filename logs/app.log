@@ -9205,3 +9205,10 @@ requests.exceptions.InvalidHeader: Header part (<okx.api.API object at 0x7f74455
 2025-09-14 04:58:14,503 - TradingBotLogger - INFO - Published message ad6c7cbc-62fc-4134-9ca6-0f5ad9073aff to topic 'trade.proposal' from analysis_agent
 2025-09-14 04:58:14,503 - TradingBotLogger - INFO - Published trade proposal ad6c7cbc-62fc-4134-9ca6-0f5ad9073aff to topic trade.proposal
 2025-09-14 04:58:14,503 - TradingBotLogger - INFO - Analysis task analysis_85c59d80-2268-48f9-91bc-b02c84803673_1757825884 completed successfully
+2025-09-14 04:59:52,779 - TradingBotLogger - INFO - Loading configuration from config/enhanced_config.yaml
+2025-09-14 04:59:52,791 - TradingBotLogger - INFO - Configuration loaded successfully.
+2025-09-14 04:59:52,792 - TradingBotLogger - INFO - Directory structure created successfully
+2025-09-14 04:59:52,792 - TradingBotLogger - INFO - Enhanced Data Manager initialized successfully
+2025-09-14 04:59:52,792 - TradingBotLogger - INFO - Fetching market tickers for BTC-USD-SWAP...
+2025-09-14 04:59:53,083 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 04:59:53,314 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
