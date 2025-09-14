@@ -22,21 +22,17 @@ args = "AI Trading System"
 name = "AI Trading System"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python main.py"
 waitForPort = 5000
 
-[workflows.workflow.metadata]
-outputType = "webview"
-
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 40685
-externalPort = 3000
 
 [[ports]]
 localPort = 41299
