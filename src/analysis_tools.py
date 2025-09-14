@@ -27,16 +27,14 @@ class AnalysisTools:
         self.mcp_api_key = os.getenv('MCP_API_KEY')
         self.mcp_base_url = f"http://localhost:{config.get('mcp_service', {}).get('port', 5000)}"
         
-        # 工具函数映射
+        # 工具函数映射 - 移除重复计算工具
         self.tool_functions = {
             'get_kline_data': self.get_kline_data,
             'get_account_balance': self.get_account_balance,
             'get_positions': self.get_positions,
             'get_market_ticker': self.get_market_ticker,
-            'calculate_indicators': self.calculate_indicators,
             'get_timeframe_list': self.get_timeframe_list,
             'get_latest_price': self.get_latest_price,
-            'analyze_trend': self.analyze_trend,
         }
         
         logger.info("Analysis Tools initialized")
@@ -113,26 +111,7 @@ class AnalysisTools:
                         "required": []
                     }
                 }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "calculate_indicators",
-                    "description": "计算技术指标的汇总信息，包含多个时间周期的指标状态",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "timeframes": {
-                                "type": "array",
-                                "items": {"type": "string"},
-                                "description": "要分析的时间周期列表",
-                                "default": ["1m", "5m", "15m", "30m"]
-                            }
-                        },
-                        "required": []
-                    }
-                }
-            },
+},
             {
                 "type": "function",
                 "function": {
@@ -162,26 +141,7 @@ class AnalysisTools:
                         "required": []
                     }
                 }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "analyze_trend",
-                    "description": "分析多个时间周期的趋势方向",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "timeframes": {
-                                "type": "array",
-                                "items": {"type": "string"},
-                                "description": "要分析的时间周期",
-                                "default": ["1m", "5m", "15m", "30m"]
-                            }
-                        },
-                        "required": []
-                    }
-                }
-            }
+}
         ]
         
         return schemas

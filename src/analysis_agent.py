@@ -16,6 +16,7 @@ import asyncio
 import threading
 from typing import Dict, List, Any, Optional, Callable
 from datetime import datetime, timedelta
+from pathlib import Path
 from openai import OpenAI
 
 from src.logger import setup_logger
@@ -45,6 +46,10 @@ class AnalysisAgent:
         # 消息队列和工具
         self.message_queue = message_queue
         self.analysis_tools = AnalysisTools(config)
+        
+        # 加载配置文件中的提示和工具定义
+        self.system_prompt = self._load_system_prompt()
+        self.tools_definition = self._load_tools_definition()
         
         # 代理状态
         self.is_running = False
@@ -192,7 +197,8 @@ class AnalysisAgent:
             
             # 工具调用循环
             max_iterations = self.ai_config.get('analysis_agent', {}).get('max_tool_calls', 20)
-            tools = self.analysis_tools.get_tool_schemas()
+            # 使用配置文件中的工具定义，但过滤掉calculate_indicators工具
+            tools = self._get_filtered_tool_schemas()
             
             for iteration in range(max_iterations):
                 logger.debug(f"Analysis iteration {iteration + 1}/{max_iterations}")
@@ -260,31 +266,64 @@ class AnalysisAgent:
             logger.error(f"Error executing tool call: {e}")
             return {"success": False, "error": str(e)}
     
+    def _load_system_prompt(self) -> str:
+        """加载AI系统提示词"""
+        try:
+            prompt_path = Path("config/ai_trading_system_prompt.md")
+            if prompt_path.exists():
+                with open(prompt_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+            else:
+                logger.warning("System prompt file not found, using default")
+                return "您是一位专业的量化交易分析师。"
+        except Exception as e:
+            logger.error(f"Error loading system prompt: {e}")
+            return "您是一位专业的量化交易分析师。"
+    
+    def _load_tools_definition(self) -> Dict:
+        """加载工具定义"""
+        try:
+            tools_path = Path("config/ai_trading_system_tools.json")
+            if tools_path.exists():
+                with open(tools_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            else:
+                logger.warning("Tools definition file not found")
+                return {"tools": []}
+        except Exception as e:
+            logger.error(f"Error loading tools definition: {e}")
+            return {"tools": []}
+    
+    def _get_filtered_tool_schemas(self) -> List[Dict]:
+        """获取过滤后的工具定义（移除calculate_indicators）"""
+        config_tools = self.tools_definition.get('tools', [])
+        filtered_tools = []
+        
+        # 只保留数据获取工具，移除计算工具
+        allowed_tools = {
+            'get_kline_data', 'get_account_balance', 'get_positions', 
+            'get_market_ticker', 'get_latest_price', 'get_timeframe_list'
+        }
+        
+        for tool in config_tools:
+            if tool.get('name') in allowed_tools:
+                openai_tool = {
+                    "type": "function",
+                    "function": {
+                        "name": tool['name'],
+                        "description": tool['description'],
+                        "parameters": tool['parameters']
+                    }
+                }
+                filtered_tools.append(openai_tool)
+        
+        logger.info(f"Loaded {len(filtered_tools)} filtered tools from config")
+        return filtered_tools
+    
     def _build_system_prompt(self, task_type: str, learning_summary: str) -> str:
         """构建系统提示"""
-        base_prompt = """你是一个专业的加密货币交易分析师，具备深厚的技术分析和市场洞察能力。
-
-你的职责：
-1. 通过调用工具获取市场数据和技术指标
-2. 进行全面的市场分析和风险评估
-3. 生成具体的交易策略建议
-
-可用工具：
-- get_kline_data: 获取K线数据和技术指标
-- get_account_balance: 查看账户余额
-- get_positions: 查看当前持仓
-- get_market_ticker: 获取市场行情
-- calculate_indicators: 计算技术指标汇总
-- get_timeframe_list: 获取可用时间周期
-- analyze_trend: 分析多时间周期趋势
-
-分析原则：
-- 多时间周期分析：从短期到长期综合判断
-- 技术指标结合：RSI、MACD、布林带等多指标验证
-- 风险控制优先：明确止损和止盈位置
-- 资金管理：合理的仓位大小和杠杆使用
-
-"""
+        # 使用配置文件中的基础提示
+        base_prompt = self.system_prompt
         
         if task_type == "opening_analysis":
             task_prompt = """
