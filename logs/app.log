@@ -11237,3 +11237,7 @@ AttributeError: 'str' object has no attribute 'get'
 2025-09-14 06:09:40,122 - TradingBotLogger - INFO - Published message 2e2a6fd3-ac91-48c3-b56d-a7aebdc58e2f to topic 'trade.proposal' from analysis_agent
 2025-09-14 06:09:40,122 - TradingBotLogger - INFO - Published trade proposal 2e2a6fd3-ac91-48c3-b56d-a7aebdc58e2f to topic trade.proposal
 2025-09-14 06:09:40,122 - TradingBotLogger - INFO - Analysis task analysis_23eb5879-e4dd-4ad6-895f-2e0012c602a5_1757830165 completed successfully
+2025-09-14 07:45:42,762 - TradingBotLogger - ERROR - Missing required environment variables: MCP_API_KEY, DASHSCOPE_API_KEY
+2025-09-14 07:45:42,762 - TradingBotLogger - ERROR - System error: Missing required environment variables: MCP_API_KEY, DASHSCOPE_API_KEY
+2025-09-14 07:46:00,776 - TradingBotLogger - ERROR - Missing required environment variables: DASHSCOPE_API_KEY, MCP_API_KEY
+2025-09-14 07:46:00,777 - TradingBotLogger - ERROR - Critical error in main: Missing required environment variables: DASHSCOPE_API_KEY, MCP_API_KEY

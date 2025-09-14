@@ -46,3 +46,15 @@ schedule
 ta
 uvicorn
 websocket-client
+fastapi
+okx
+openai
+pandas
+pydantic
+python-dotenv
+pyyaml
+requests
+schedule
+ta
+uvicorn
+websocket-client
