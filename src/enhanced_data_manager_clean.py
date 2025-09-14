@@ -3,7 +3,6 @@
 Enhanced Data Manager
 
 负责K线数据的获取、处理、存储和文件管理
-修改为使用短文件名和覆盖模式
 """
 
 import os
@@ -62,40 +61,33 @@ class EnhancedDataManager:
         
         logger.info("Enhanced Data Manager initialized successfully")
     
-    def normalize_timeframe(self, timeframe):
-        """将时间周期标准化为小写短格式"""
-        return timeframe.lower()
-    
     def _create_directory_structure(self):
         """创建数据存储目录结构"""
         try:
             base_path = Path(self.base_directory)
             base_path.mkdir(exist_ok=True)
             
-            # 为每个时间周期创建目录（使用标准化名称）
+            # 为每个时间周期创建目录
             all_timeframes = []
             for category, tfs in self.config.get('timeframes', {}).items():
                 all_timeframes.extend(tfs)
             
             for tf in all_timeframes:
-                normalized_tf = self.normalize_timeframe(tf)
-                tf_path = base_path / normalized_tf
+                tf_path = base_path / tf
                 tf_path.mkdir(exist_ok=True)
+                
+                # 创建子目录
+                (tf_path / "kline").mkdir(exist_ok=True)
+                (tf_path / "indicators").mkdir(exist_ok=True)
+                (tf_path / "combined").mkdir(exist_ok=True)
+            
+            # 创建备份目录
+            backup_dir = self.config.get('storage', {}).get('backup_directory', 'kline_data_backup')
+            Path(backup_dir).mkdir(exist_ok=True)
             
             logger.info("Directory structure created successfully")
         except Exception as e:
             logger.error(f"Error creating directory structure: {e}")
-    
-    def _atomic_write(self, file_path, write_function):
-        """原子性写入文件"""
-        temp_path = str(file_path) + ".tmp"
-        try:
-            write_function(temp_path)
-            os.replace(temp_path, file_path)
-        except Exception as e:
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
-            raise e
     
     def get_category_for_timeframe(self, timeframe):
         """获取时间周期对应的类别"""
@@ -133,8 +125,6 @@ class EnhancedDataManager:
             }
         }
         
-        processed_timeframes = []
-        
         for timeframe in timeframes:
             try:
                 logger.info(f"Processing {timeframe} data for {symbol}...")
@@ -143,6 +133,7 @@ class EnhancedDataManager:
                 kline_config = self.config.get('kline_config', {}).get(timeframe, {})
                 fetch_count = kline_config.get('fetch_count', 100)
                 output_count = kline_config.get('output_count', 50)
+                save_format = kline_config.get('save_format', 'parquet')
                 
                 # 获取K线数据
                 kline_data = self._fetch_single_timeframe_data(
@@ -168,13 +159,11 @@ class EnhancedDataManager:
                     kline_data_with_indicators
                 )
                 
-                # 保存数据（使用新的短文件名格式）
+                # 保存数据
                 save_result = self._save_data(
                     kline_data, kline_data_with_indicators, 
-                    symbol, timeframe
+                    symbol, timeframe, save_format
                 )
-                
-                processed_timeframes.append(self.normalize_timeframe(timeframe))
                 
                 results['success'].append({
                     'timeframe': timeframe,
@@ -191,12 +180,6 @@ class EnhancedDataManager:
                     'timeframe': timeframe,
                     'reason': str(e)
                 })
-        
-        # 清理未获取的时间周期数据
-        self.cleanup_unused_timeframes(processed_timeframes)
-        
-        # 更新MCP清单
-        self.update_mcp_manifest(processed_timeframes)
         
         return results
     
@@ -248,130 +231,78 @@ class EnhancedDataManager:
             logger.error(f"Error fetching {timeframe} data: {e}")
             return pd.DataFrame()
     
-    def _save_data(self, kline_data, indicator_data, symbol, timeframe):
+    def _save_data(self, kline_data, indicator_data, symbol, timeframe, format='parquet'):
         """
-        保存K线数据和指标数据到文件（使用短文件名）
-        
-        Args:
-            kline_data (pd.DataFrame): 原始K线数据
-            indicator_data (pd.DataFrame): 包含指标的数据
-            symbol (str): 交易对
-            timeframe (str): 时间周期
-        
-        Returns:
-            dict: 保存的文件路径信息
+        保存K线数据和指标数据到文件
         """
         try:
-            normalized_tf = self.normalize_timeframe(timeframe)
-            base_path = Path(self.base_directory) / normalized_tf
-            base_path.mkdir(exist_ok=True)
+            base_path = Path(self.base_directory) / timeframe
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
             file_paths = {}
             
-            # 简单文件名：直接使用时间周期名称
-            combined_path = base_path / f"{normalized_tf}.csv"
+            # 保存原始K线数据
+            kline_filename = f"{symbol}_{timeframe}_kline_{timestamp}.{format}"
+            kline_path = base_path / "kline" / kline_filename
             
-            # 原子性保存合并数据（K线+指标）
-            def write_combined(temp_path):
-                indicator_data.to_csv(temp_path, index=False)
+            if format == 'parquet':
+                kline_data.to_parquet(kline_path, index=False)
+            else:
+                kline_data.to_csv(kline_path, index=False)
             
-            self._atomic_write(combined_path, write_combined)
-            file_paths['combined'] = f"{normalized_tf}/{normalized_tf}.csv"
+            file_paths['kline'] = str(kline_path)
+            
+            # 保存技术指标数据（仅指标列）
+            indicator_columns = [col for col in indicator_data.columns 
+                               if col not in ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'is_closed']]
+            
+            if indicator_columns:
+                indicator_only_data = indicator_data[['timestamp'] + indicator_columns].copy()
+                indicator_filename = f"{symbol}_{timeframe}_indicators_{timestamp}.{format}"
+                indicator_path = base_path / "indicators" / indicator_filename
+                
+                if format == 'parquet':
+                    indicator_only_data.to_parquet(indicator_path, index=False)
+                else:
+                    indicator_only_data.to_csv(indicator_path, index=False)
+                
+                file_paths['indicators'] = str(indicator_path)
+            
+            # 保存合并数据（K线+指标）
+            combined_filename = f"{symbol}_{timeframe}_combined_{timestamp}.{format}"
+            combined_path = base_path / "combined" / combined_filename
+            
+            if format == 'parquet':
+                indicator_data.to_parquet(combined_path, index=False)
+            else:
+                indicator_data.to_csv(combined_path, index=False)
+            
+            file_paths['combined'] = str(combined_path)
             
             # 保存元数据
             metadata = {
                 'symbol': symbol,
                 'timeframe': timeframe,
-                'normalized_timeframe': normalized_tf,
-                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'timestamp': timestamp,
                 'record_count': len(indicator_data),
                 'columns': list(indicator_data.columns),
-                'file_paths': file_paths
+                'file_paths': file_paths,
+                'format': format
             }
             
-            metadata_path = base_path / "metadata.json"
-            def write_metadata(temp_path):
-                with open(temp_path, 'w', encoding='utf-8') as f:
-                    json.dump(metadata, f, indent=2, ensure_ascii=False)
+            metadata_filename = f"{symbol}_{timeframe}_metadata_{timestamp}.json"
+            metadata_path = base_path / metadata_filename
             
-            self._atomic_write(metadata_path, write_metadata)
-            file_paths['metadata'] = f"{normalized_tf}/metadata.json"
+            with open(metadata_path, 'w', encoding='utf-8') as f:
+                json.dump(metadata, f, indent=2, ensure_ascii=False)
             
-            logger.info(f"Saved {timeframe} data to {combined_path}")
+            file_paths['metadata'] = str(metadata_path)
+            
             return file_paths
             
         except Exception as e:
             logger.error(f"Error saving data for {timeframe}: {e}")
             return {}
-    
-    def cleanup_unused_timeframes(self, processed_timeframes):
-        """
-        清理本次未获取的时间周期数据
-        
-        Args:
-            processed_timeframes (list): 本次处理的时间周期列表（已标准化）
-        """
-        try:
-            base_path = Path(self.base_directory)
-            if not base_path.exists():
-                return
-            
-            deleted_files = []
-            
-            # 遍历所有时间周期目录
-            for tf_dir in base_path.iterdir():
-                if tf_dir.is_dir() and tf_dir.name not in ['logs', 'backup']:
-                    tf_name = tf_dir.name
-                    
-                    # 如果这个时间周期本次没有处理，删除其文件
-                    if tf_name not in processed_timeframes:
-                        for file_pattern in [f"{tf_name}.csv", "metadata.json"]:
-                            file_path = tf_dir / file_pattern
-                            if file_path.exists():
-                                file_path.unlink()
-                                deleted_files.append(str(file_path))
-                        
-                        # 如果目录为空，删除目录
-                        if not any(tf_dir.iterdir()):
-                            tf_dir.rmdir()
-                            deleted_files.append(str(tf_dir))
-            
-            if deleted_files:
-                logger.info(f"Cleaned up {len(deleted_files)} unused timeframe files/directories")
-            
-        except Exception as e:
-            logger.error(f"Error cleaning up unused timeframes: {e}")
-    
-    def update_mcp_manifest(self, processed_timeframes):
-        """
-        更新MCP清单文件
-        
-        Args:
-            processed_timeframes (list): 处理的时间周期列表（已标准化）
-        """
-        try:
-            manifest_path = Path(self.base_directory) / "manifest.json"
-            
-            # 构建新的文件列表
-            files = []
-            for tf in processed_timeframes:
-                files.append(f"{tf}/{tf}.csv")
-            
-            manifest = {
-                "files": sorted(files),
-                "last_updated": datetime.utcnow().isoformat() + 'Z'
-            }
-            
-            # 原子性保存manifest
-            def write_manifest(temp_path):
-                with open(temp_path, 'w', encoding='utf-8') as f:
-                    json.dump(manifest, f, indent=2, ensure_ascii=False)
-            
-            self._atomic_write(manifest_path, write_manifest)
-            logger.info(f"Updated MCP manifest with {len(files)} files")
-            
-        except Exception as e:
-            logger.error(f"Error updating MCP manifest: {e}")
     
     def get_account_summary(self):
         """
@@ -425,7 +356,7 @@ class EnhancedDataManager:
     
     def cleanup_old_files(self, days_to_keep=7):
         """
-        清理旧文件（保留功能以兼容现有调用）
+        清理旧文件
         """
         try:
             import time
@@ -434,12 +365,10 @@ class EnhancedDataManager:
             base_path = Path(self.base_directory)
             deleted_files = []
             
-            # 只清理备份目录或日志文件
-            for pattern in ['backup/**/*', 'logs/**/*', '*.log']:
-                for file_path in base_path.glob(pattern):
-                    if file_path.is_file() and file_path.stat().st_mtime < cutoff_time:
-                        file_path.unlink()
-                        deleted_files.append(str(file_path))
+            for file_path in base_path.rglob("*"):
+                if file_path.is_file() and file_path.stat().st_mtime < cutoff_time:
+                    file_path.unlink()
+                    deleted_files.append(str(file_path))
             
             logger.info(f"Cleaned up {len(deleted_files)} old files")
             return deleted_files

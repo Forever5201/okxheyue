@@ -12,3 +12,14 @@ python-dotenv
 requests
 ta
 websocket-client
+fastapi
+pandas
+pydantic
+python-dotenv
+pyyaml
+requests
+schedule
+ta
+uvicorn
+websocket-client
+okx
