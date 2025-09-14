@@ -8102,3 +8102,210 @@ requests.exceptions.InvalidHeader: Header part (<okx.api.API object at 0x7fd4bcd
 2025-09-14 02:02:18,068 - TradingBotLogger - INFO - Published message 8e4fe4aa-7092-41b5-b041-9c935d4de176 to topic 'trade.proposal' from analysis_agent
 2025-09-14 02:02:18,069 - TradingBotLogger - INFO - Published trade proposal 8e4fe4aa-7092-41b5-b041-9c935d4de176 to topic trade.proposal
 2025-09-14 02:02:18,069 - TradingBotLogger - INFO - Analysis task analysis_64b87750-57c4-4696-854d-9015b2cb3333_1757815330 completed successfully
+2025-09-14 03:02:10,243 - TradingBotLogger - INFO - Starting comprehensive data fetch...
+2025-09-14 03:02:10,244 - TradingBotLogger - ERROR - Error fetching account balance: Header part (<okx.api.API object at 0x7fd4bcd2fb90>) from ('OK-ACCESS-KEY', <okx.api.API object at 0x7fd4bcd2fb90>) must be of type str or bytes, not <class 'okx.api.API'>
+Traceback (most recent call last):
+  File "/home/runner/workspace/src/account_fetcher.py", line 62, in get_balance
+    response = self.client.get_balance()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/okx/api/account.py", line 108, in get_balance
+    return self.send_request(*_AccountEndpoints.get_balance, **to_local(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/okx/api/_client.py", line 152, in send_request
+    return inner(path, method, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/okx/api/_client.py", line 37, in wrapper2
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/okx/api/_client.py", line 138, in inner
+    response = requests.get(url, headers=header, proxies=proxies)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/sessions.py", line 484, in prepare_request
+    p.prepare(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/models.py", line 368, in prepare
+    self.prepare_headers(headers)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/models.py", line 490, in prepare_headers
+    check_header_validity(header)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/utils.py", line 1032, in check_header_validity
+    _validate_header_part(header, value, 1)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/utils.py", line 1041, in _validate_header_part
+    raise InvalidHeader(
+requests.exceptions.InvalidHeader: Header part (<okx.api.API object at 0x7fd4bcd2fb90>) from ('OK-ACCESS-KEY', <okx.api.API object at 0x7fd4bcd2fb90>) must be of type str or bytes, not <class 'okx.api.API'>
+2025-09-14 03:02:10,247 - TradingBotLogger - ERROR - Error fetching detailed positions: Header part (<okx.api.API object at 0x7fd4bcd2fb90>) from ('OK-ACCESS-KEY', <okx.api.API object at 0x7fd4bcd2fb90>) must be of type str or bytes, not <class 'okx.api.API'>
+Traceback (most recent call last):
+  File "/home/runner/workspace/src/account_fetcher.py", line 208, in get_detailed_positions
+    response = self.client.get_positions()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/okx/api/account.py", line 194, in get_positions
+    return self.send_request(*_AccountEndpoints.get_positions, **to_local(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/okx/api/_client.py", line 152, in send_request
+    return inner(path, method, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/okx/api/_client.py", line 37, in wrapper2
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/okx/api/_client.py", line 138, in inner
+    response = requests.get(url, headers=header, proxies=proxies)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/sessions.py", line 484, in prepare_request
+    p.prepare(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/models.py", line 368, in prepare
+    self.prepare_headers(headers)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/models.py", line 490, in prepare_headers
+    check_header_validity(header)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/utils.py", line 1032, in check_header_validity
+    _validate_header_part(header, value, 1)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/requests/utils.py", line 1041, in _validate_header_part
+    raise InvalidHeader(
+requests.exceptions.InvalidHeader: Header part (<okx.api.API object at 0x7fd4bcd2fb90>) from ('OK-ACCESS-KEY', <okx.api.API object at 0x7fd4bcd2fb90>) must be of type str or bytes, not <class 'okx.api.API'>
+2025-09-14 03:02:10,248 - TradingBotLogger - INFO - Fetching market tickers for BTC-USD-SWAP...
+2025-09-14 03:02:10,560 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:10,787 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:11,026 - TradingBotLogger - INFO - Processing 1m data for BTC-USD-SWAP...
+2025-09-14 03:02:11,027 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (200 points) for BTC-USD-SWAP at 1m...
+2025-09-14 03:02:11,274 - TradingBotLogger - INFO - Fetched 200 K-line data.
+2025-09-14 03:02:11,274 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:11,485 - TradingBotLogger - INFO - Fetching current k-line for BTC-USD-SWAP at 1m...
+2025-09-14 03:02:11,711 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:11,945 - TradingBotLogger - INFO - Successfully fetched current k-line.
+2025-09-14 03:02:11,949 - TradingBotLogger - INFO - Calculating all indicators for category: short_term
+2025-09-14 03:02:11,951 - TradingBotLogger - INFO - Calculated RSI with period: 14
+2025-09-14 03:02:11,953 - TradingBotLogger - INFO - Calculated MACD with fast=12, slow=26, signal=9
+2025-09-14 03:02:11,956 - TradingBotLogger - INFO - Calculated Bollinger Bands with period=20, std_dev=2.0
+2025-09-14 03:02:11,958 - TradingBotLogger - INFO - Calculated ATR with period: 14
+2025-09-14 03:02:11,960 - TradingBotLogger - INFO - Calculated Stochastic with K=14, D=3, smooth=3
+2025-09-14 03:02:11,961 - TradingBotLogger - INFO - Calculated Williams %R with period: 14
+2025-09-14 03:02:11,963 - TradingBotLogger - INFO - Calculated CCI with period: 20
+2025-09-14 03:02:11,967 - TradingBotLogger - INFO - Calculated volume indicators
+2025-09-14 03:02:11,969 - TradingBotLogger - INFO - Calculated momentum indicators
+2025-09-14 03:02:11,969 - TradingBotLogger - INFO - Successfully calculated all indicators for short_term
+2025-09-14 03:02:11,972 - TradingBotLogger - INFO - Added signal analysis
+2025-09-14 03:02:11,979 - TradingBotLogger - INFO - Saved 1m data to kline_data/1m/1m.csv
+2025-09-14 03:02:11,979 - TradingBotLogger - INFO - Successfully processed 1m: 100 records
+2025-09-14 03:02:11,979 - TradingBotLogger - INFO - Processing 5m data for BTC-USD-SWAP...
+2025-09-14 03:02:11,979 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (200 points) for BTC-USD-SWAP at 5m...
+2025-09-14 03:02:12,222 - TradingBotLogger - INFO - Fetched 200 K-line data.
+2025-09-14 03:02:12,222 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:12,456 - TradingBotLogger - INFO - Fetching current k-line for BTC-USD-SWAP at 5m...
+2025-09-14 03:02:12,675 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:12,899 - TradingBotLogger - INFO - Successfully fetched current k-line.
+2025-09-14 03:02:12,905 - TradingBotLogger - INFO - Calculating all indicators for category: short_term
+2025-09-14 03:02:12,908 - TradingBotLogger - INFO - Calculated RSI with period: 14
+2025-09-14 03:02:12,911 - TradingBotLogger - INFO - Calculated MACD with fast=12, slow=26, signal=9
+2025-09-14 03:02:12,916 - TradingBotLogger - INFO - Calculated Bollinger Bands with period=20, std_dev=2.0
+2025-09-14 03:02:12,919 - TradingBotLogger - INFO - Calculated ATR with period: 14
+2025-09-14 03:02:12,921 - TradingBotLogger - INFO - Calculated Stochastic with K=14, D=3, smooth=3
+2025-09-14 03:02:12,922 - TradingBotLogger - INFO - Calculated Williams %R with period: 14
+2025-09-14 03:02:12,925 - TradingBotLogger - INFO - Calculated CCI with period: 20
+2025-09-14 03:02:12,929 - TradingBotLogger - INFO - Calculated volume indicators
+2025-09-14 03:02:12,930 - TradingBotLogger - INFO - Calculated momentum indicators
+2025-09-14 03:02:12,930 - TradingBotLogger - INFO - Successfully calculated all indicators for short_term
+2025-09-14 03:02:12,933 - TradingBotLogger - INFO - Added signal analysis
+2025-09-14 03:02:12,940 - TradingBotLogger - INFO - Saved 5m data to kline_data/5m/5m.csv
+2025-09-14 03:02:12,940 - TradingBotLogger - INFO - Successfully processed 5m: 100 records
+2025-09-14 03:02:12,940 - TradingBotLogger - INFO - Processing 15m data for BTC-USD-SWAP...
+2025-09-14 03:02:12,940 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (200 points) for BTC-USD-SWAP at 15m...
+2025-09-14 03:02:13,173 - TradingBotLogger - INFO - Fetched 200 K-line data.
+2025-09-14 03:02:13,173 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:13,398 - TradingBotLogger - INFO - Fetching current k-line for BTC-USD-SWAP at 15m...
+2025-09-14 03:02:13,634 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:13,861 - TradingBotLogger - INFO - Successfully fetched current k-line.
+2025-09-14 03:02:13,864 - TradingBotLogger - INFO - Calculating all indicators for category: short_term
+2025-09-14 03:02:13,866 - TradingBotLogger - INFO - Calculated RSI with period: 14
+2025-09-14 03:02:13,867 - TradingBotLogger - INFO - Calculated MACD with fast=12, slow=26, signal=9
+2025-09-14 03:02:13,870 - TradingBotLogger - INFO - Calculated Bollinger Bands with period=20, std_dev=2.0
+2025-09-14 03:02:13,872 - TradingBotLogger - INFO - Calculated ATR with period: 14
+2025-09-14 03:02:13,873 - TradingBotLogger - INFO - Calculated Stochastic with K=14, D=3, smooth=3
+2025-09-14 03:02:13,874 - TradingBotLogger - INFO - Calculated Williams %R with period: 14
+2025-09-14 03:02:13,876 - TradingBotLogger - INFO - Calculated CCI with period: 20
+2025-09-14 03:02:13,879 - TradingBotLogger - INFO - Calculated volume indicators
+2025-09-14 03:02:13,879 - TradingBotLogger - INFO - Calculated momentum indicators
+2025-09-14 03:02:13,879 - TradingBotLogger - INFO - Successfully calculated all indicators for short_term
+2025-09-14 03:02:13,882 - TradingBotLogger - INFO - Added signal analysis
+2025-09-14 03:02:13,887 - TradingBotLogger - INFO - Saved 15m data to kline_data/15m/15m.csv
+2025-09-14 03:02:13,887 - TradingBotLogger - INFO - Successfully processed 15m: 100 records
+2025-09-14 03:02:13,887 - TradingBotLogger - INFO - Processing 30m data for BTC-USD-SWAP...
+2025-09-14 03:02:13,888 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (200 points) for BTC-USD-SWAP at 30m...
+2025-09-14 03:02:14,126 - TradingBotLogger - INFO - Fetched 200 K-line data.
+2025-09-14 03:02:14,127 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:14,354 - TradingBotLogger - INFO - Fetching current k-line for BTC-USD-SWAP at 30m...
+2025-09-14 03:02:14,592 - TradingBotLogger - INFO - Fetching funding rate for BTC-USD-SWAP...
+2025-09-14 03:02:14,820 - TradingBotLogger - INFO - Successfully fetched current k-line.
+2025-09-14 03:02:14,823 - TradingBotLogger - INFO - Calculating all indicators for category: short_term
+2025-09-14 03:02:14,825 - TradingBotLogger - INFO - Calculated RSI with period: 14
+2025-09-14 03:02:14,828 - TradingBotLogger - INFO - Calculated MACD with fast=12, slow=26, signal=9
+2025-09-14 03:02:14,833 - TradingBotLogger - INFO - Calculated Bollinger Bands with period=20, std_dev=2.0
+2025-09-14 03:02:14,836 - TradingBotLogger - INFO - Calculated ATR with period: 14
+2025-09-14 03:02:14,839 - TradingBotLogger - INFO - Calculated Stochastic with K=14, D=3, smooth=3
+2025-09-14 03:02:14,840 - TradingBotLogger - INFO - Calculated Williams %R with period: 14
+2025-09-14 03:02:14,843 - TradingBotLogger - INFO - Calculated CCI with period: 20
+2025-09-14 03:02:14,847 - TradingBotLogger - INFO - Calculated volume indicators
+2025-09-14 03:02:14,848 - TradingBotLogger - INFO - Calculated momentum indicators
+2025-09-14 03:02:14,849 - TradingBotLogger - INFO - Successfully calculated all indicators for short_term
+2025-09-14 03:02:14,853 - TradingBotLogger - INFO - Added signal analysis
+2025-09-14 03:02:14,865 - TradingBotLogger - INFO - Saved 30m data to kline_data/30m/30m.csv
+2025-09-14 03:02:14,866 - TradingBotLogger - INFO - Successfully processed 30m: 100 records
+2025-09-14 03:02:14,866 - TradingBotLogger - INFO - Processing 1h data for BTC-USD-SWAP...
+2025-09-14 03:02:14,866 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (200 points) for BTC-USD-SWAP at 1h...
+2025-09-14 03:02:15,095 - TradingBotLogger - WARNING - No K-line data returned.
+2025-09-14 03:02:15,096 - TradingBotLogger - WARNING - No data received for 1h
+2025-09-14 03:02:15,097 - TradingBotLogger - INFO - Processing 2h data for BTC-USD-SWAP...
+2025-09-14 03:02:15,097 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (200 points) for BTC-USD-SWAP at 2h...
+2025-09-14 03:02:15,329 - TradingBotLogger - WARNING - No K-line data returned.
+2025-09-14 03:02:15,330 - TradingBotLogger - WARNING - No data received for 2h
+2025-09-14 03:02:15,330 - TradingBotLogger - INFO - Processing 4h data for BTC-USD-SWAP...
+2025-09-14 03:02:15,331 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (200 points) for BTC-USD-SWAP at 4h...
+2025-09-14 03:02:15,566 - TradingBotLogger - WARNING - No K-line data returned.
+2025-09-14 03:02:15,568 - TradingBotLogger - WARNING - No data received for 4h
+2025-09-14 03:02:15,568 - TradingBotLogger - INFO - Processing 6h data for BTC-USD-SWAP...
+2025-09-14 03:02:15,568 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (150 points) for BTC-USD-SWAP at 6h...
+2025-09-14 03:02:15,789 - TradingBotLogger - WARNING - No K-line data returned.
+2025-09-14 03:02:15,791 - TradingBotLogger - WARNING - No data received for 6h
+2025-09-14 03:02:15,791 - TradingBotLogger - INFO - Processing 12h data for BTC-USD-SWAP...
+2025-09-14 03:02:15,791 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (150 points) for BTC-USD-SWAP at 12h...
+2025-09-14 03:02:16,034 - TradingBotLogger - WARNING - No K-line data returned.
+2025-09-14 03:02:16,034 - TradingBotLogger - WARNING - No data received for 12h
+2025-09-14 03:02:16,034 - TradingBotLogger - INFO - Processing 1d data for BTC-USD-SWAP...
+2025-09-14 03:02:16,035 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (120 points) for BTC-USD-SWAP at 1d...
+2025-09-14 03:02:16,260 - TradingBotLogger - WARNING - No K-line data returned.
+2025-09-14 03:02:16,261 - TradingBotLogger - WARNING - No data received for 1d
+2025-09-14 03:02:16,262 - TradingBotLogger - INFO - Processing 3d data for BTC-USD-SWAP...
+2025-09-14 03:02:16,262 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (100 points) for BTC-USD-SWAP at 3d...
+2025-09-14 03:02:16,580 - TradingBotLogger - WARNING - No K-line data returned.
+2025-09-14 03:02:16,581 - TradingBotLogger - WARNING - No data received for 3d
+2025-09-14 03:02:16,581 - TradingBotLogger - INFO - Processing 1w data for BTC-USD-SWAP...
+2025-09-14 03:02:16,581 - TradingBotLogger - INFO - Fetching K-line data from /api/v5/market/candles (80 points) for BTC-USD-SWAP at 1w...
+2025-09-14 03:02:16,813 - TradingBotLogger - WARNING - No K-line data returned.
+2025-09-14 03:02:16,815 - TradingBotLogger - WARNING - No data received for 1w
+2025-09-14 03:02:16,818 - TradingBotLogger - INFO - Updated MCP manifest with 4 files
+2025-09-14 03:02:16,820 - TradingBotLogger - INFO - Run summary saved to: system_logs/run_summary_20250914_030216.json
+2025-09-14 03:02:16,820 - TradingBotLogger - INFO - Published message 53023aa6-d98c-41b1-b8e5-c740d1dd549c to topic 'analysis.request' from ai_trading_system
+2025-09-14 03:02:16,820 - TradingBotLogger - INFO - Published analysis request 53023aa6-d98c-41b1-b8e5-c740d1dd549c after data update
+2025-09-14 03:02:16,820 - TradingBotLogger - INFO - Data fetch completed successfully
+2025-09-14 03:02:16,820 - TradingBotLogger - INFO - Processing analysis request: analysis_53023aa6-d98c-41b1-b8e5-c740d1dd549c_1757818936
+2025-09-14 03:02:16,821 - TradingBotLogger - INFO - Starting analysis task analysis_53023aa6-d98c-41b1-b8e5-c740d1dd549c_1757818936 of type opening_analysis
+2025-09-14 03:02:18,511 - TradingBotLogger - INFO - Tool 'get_kline_data' executed successfully
+2025-09-14 03:02:20,263 - TradingBotLogger - INFO - Tool 'get_market_ticker' executed successfully
+2025-09-14 03:02:21,342 - TradingBotLogger - INFO - Tool 'get_latest_price' executed successfully
+2025-09-14 03:02:26,306 - TradingBotLogger - INFO - Published message 6cfd1754-2d51-4698-9ac6-dda7a7361936 to topic 'trade.proposal' from analysis_agent
+2025-09-14 03:02:26,307 - TradingBotLogger - INFO - Published trade proposal 6cfd1754-2d51-4698-9ac6-dda7a7361936 to topic trade.proposal
+2025-09-14 03:02:26,307 - TradingBotLogger - INFO - Analysis task analysis_53023aa6-d98c-41b1-b8e5-c740d1dd549c_1757818936 completed successfully
