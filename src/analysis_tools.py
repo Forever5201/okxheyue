@@ -302,7 +302,7 @@ class AnalysisTools:
     def get_market_ticker(self, symbol: str = "BTC-USD-SWAP") -> Dict[str, Any]:
         """获取市场行情"""
         try:
-            url = f"{self.mcp_base_url}/get_market_data"
+            url = f"{self.mcp_base_url}/get_market_ticker"
             headers = {"x-api-key": self.mcp_api_key}
             params = {"symbol": symbol}
             
