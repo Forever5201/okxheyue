@@ -1,0 +1,125 @@
+{
+  "timestamp": "2025-09-14T01:39:30.604711Z",
+  "fetch_results": {
+    "success": [
+      {
+        "timeframe": "1m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "1m/1m.csv",
+          "metadata": "1m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "5m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "5m/5m.csv",
+          "metadata": "5m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "15m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "15m/15m.csv",
+          "metadata": "15m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "30m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "30m/30m.csv",
+          "metadata": "30m/metadata.json"
+        },
+        "category": "short_term"
+      }
+    ],
+    "failed": [
+      {
+        "timeframe": "1h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "2h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "4h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "6h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "12h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "1d",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "3d",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "1w",
+        "reason": "No data received"
+      }
+    ],
+    "metadata": {
+      "symbol": "BTC-USD-SWAP",
+      "timestamp": "2025-09-14T01:39:24.400058Z",
+      "total_timeframes": 12
+    }
+  },
+  "account_summary": {
+    "balance": {
+      "balance": 0.0,
+      "available_balance": 0.0,
+      "currency": "USDT",
+      "margin_frozen": 0.0,
+      "margin_ratio": 0.0,
+      "unrealized_pnl": 0.0,
+      "total_equity": 0.0,
+      "account_risk": 0.0,
+      "maintenance_margin": 0.0
+    },
+    "positions": [],
+    "timestamp": "2025-09-14T01:39:23.659592Z"
+  },
+  "market_summary": {
+    "symbol": "BTC-USD-SWAP",
+    "market_data": {
+      "last_price": 115858.4,
+      "best_bid": 115845.4,
+      "best_ask": 115845.5,
+      "24h_high": 116213.0,
+      "24h_low": 115123.3,
+      "24h_volume": 2597843.0,
+      "24h_turnover": 2245.0142,
+      "open_interest": 0.0,
+      "funding_rate": 0.0001,
+      "next_funding_time": "1757865600000",
+      "estimated_rate": 0.0,
+      "timestamp": 1757813964186,
+      "time_iso": "2025-09-14T01:39:24Z"
+    },
+    "funding_data": {
+      "funding_rate": 0.0001,
+      "next_funding_time": "1757865600000",
+      "estimated_rate": 0.0
+    },
+    "timestamp": "2025-09-14T01:39:24.400037Z"
+  },
+  "system_status": {
+    "is_running": false,
+    "last_update": null
+  }
+}
