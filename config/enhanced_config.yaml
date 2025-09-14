@@ -157,10 +157,29 @@ storage:
 
 # AI分析配置
 ai_analysis:
-  model: "gpt-4"               # 使用的AI模型
-  max_tokens: 4000             # 最大token数
-  temperature: 0.3             # 创造性参数
-  prompt_template_file: "prompts/trading_analysis_prompt.txt"
+  # 千问大模型配置
+  qwen:
+    model: "qwen-plus"           # 千问模型版本
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    max_tokens: 4000             # 最大token数
+    temperature: 0.3             # 创造性参数 (0.0-1.0)
+    timeout: 60                  # 请求超时时间（秒）
+    retry_attempts: 3            # 重试次数
+  
+  # 分析代理配置
+  analysis_agent:
+    enabled: true                # 是否启用分析代理
+    task_types:                  # 支持的任务类型
+      - "opening_analysis"       # 开仓分析
+      - "position_management"    # 持仓管理
+    tools:                       # 可用工具列表
+      - "get_kline_data"         # K线数据获取
+      - "get_account_balance"    # 账户余额查询
+      - "get_positions"          # 持仓信息查询
+      - "get_market_ticker"      # 市场行情数据
+      - "calculate_indicators"   # 技术指标计算
+    analysis_timeout: 300        # 分析超时时间（秒）
+    max_tool_calls: 20          # 单次分析最大工具调用次数
   
 # 风险控制配置
 risk_management:
@@ -183,3 +202,44 @@ mcp_service:
   max_file_size: 10            # MB
   allowed_extensions: [".csv", ".parquet", ".json"]
   rate_limit: 100              # 每分钟请求限制
+
+# 消息队列配置
+message_queue:
+  # 简化版本使用内存队列，生产环境可配置为RabbitMQ/Redis
+  type: "memory"               # 队列类型: memory, redis, rabbitmq
+  max_message_size: 1048576    # 最大消息大小 (1MB)
+  message_ttl: 3600           # 消息生存时间（秒）
+  retry_attempts: 3            # 消息重试次数
+  
+  # 队列主题配置
+  topics:
+    analysis_request: "analysis.request"           # 分析请求
+    re_analysis_trigger: "analysis.retrigger"     # 重新分析触发
+    trade_proposal: "trade.proposal"              # 交易提案
+    approved_order: "order.approved"              # 审批通过订单
+    register_triggers: "triggers.register"       # 注册监控触发器
+    
+# 代理系统配置
+agent_system:
+  enabled: true                # 是否启用代理系统
+  startup_delay: 5            # 系统启动延迟（秒）
+  heartbeat_interval: 30      # 心跳检测间隔（秒）
+  
+  # 各代理状态配置
+  agents:
+    analysis_agent:
+      enabled: true
+      auto_start: true         # 是否自动启动
+      max_concurrent_tasks: 2  # 最大并发任务数
+    risk_agent:
+      enabled: false           # 暂时禁用，后续实现
+      auto_start: false
+    execution_agent:
+      enabled: false           # 暂时禁用，后续实现
+      auto_start: false
+    monitoring_agent:
+      enabled: false           # 暂时禁用，后续实现
+      auto_start: false
+    review_agent:
+      enabled: false           # 暂时禁用，后续实现
+      auto_start: false
