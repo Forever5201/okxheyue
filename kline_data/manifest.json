@@ -1,8 +1,9 @@
 {
   "files": [
-    "1h/BTC-USD-SWAP_1h.csv",
-    "2h/BTC-USD-SWAP_2h.csv",
-    "4h/BTC-USD-SWAP_4h.csv",
-    "6h/BTC-USD-SWAP_6h.csv"
-  ]
+    "15m/15m.csv",
+    "1m/1m.csv",
+    "30m/30m.csv",
+    "5m/5m.csv"
+  ],
+  "last_updated": "2025-09-14T00:41:21.653456Z"
 }

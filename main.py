@@ -254,4 +254,4 @@ def main():
         print("\n👋 AI交易系统已停止")
 
 if __name__ == "__main__":
-    main()"
+    main()

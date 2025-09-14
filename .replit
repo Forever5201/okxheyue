@@ -18,41 +18,26 @@ author = "agent"
 task = "workflow.run"
 args = "AI Trading System"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "System Test"
-
 [[workflows.workflow]]
 name = "AI Trading System"
 author = "agent"
 
-[workflows.workflow.metadata]
-outputType = "webview"
-
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python simple_main.py"
+args = "python main.py"
 waitForPort = 5000
 
-[[workflows.workflow]]
-name = "System Test"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python test_system.py"
-
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 40623
-externalPort = 3001
-
-[[ports]]
 localPort = 40685
 externalPort = 3000
+
+[[ports]]
+localPort = 46293
+externalPort = 3001
