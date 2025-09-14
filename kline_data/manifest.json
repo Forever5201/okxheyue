@@ -1,9 +1,6 @@
 {
   "files": [
-    "15m/15m.csv",
-    "1m/1m.csv",
-    "30m/30m.csv",
-    "5m/5m.csv"
+    "1d/1d.csv"
   ],
-  "last_updated": "2025-09-14T03:02:16.816800Z"
+  "last_updated": "2025-09-14T03:43:07.161134Z"
 }
