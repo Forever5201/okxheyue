@@ -11,6 +11,8 @@ schedule
 okx
 openai
 fastapi
+okx
+openai
 pandas
 pydantic
 python-dotenv
