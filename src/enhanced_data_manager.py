@@ -63,8 +63,27 @@ class EnhancedDataManager:
         logger.info("Enhanced Data Manager initialized successfully")
     
     def normalize_timeframe(self, timeframe):
-        """将时间周期标准化为小写短格式"""
+        """将时间周期标准化为小写短格式（用于目录命名）"""
         return timeframe.lower()
+    
+    def get_okx_timeframe_format(self, timeframe):
+        """将时间周期转换为OKX API接受的格式"""
+        # 时间周期映射：配置文件格式 -> OKX API格式
+        mapping = {
+            '1m': '1m',    # 分钟级别保持不变
+            '5m': '5m',
+            '15m': '15m', 
+            '30m': '30m',
+            '1h': '1H',    # 小时级别需要大写
+            '2h': '2H',
+            '4h': '4H', 
+            '6h': '6H',
+            '12h': '12H',
+            '1d': '1D',    # 天级别需要大写
+            '3d': '3D',
+            '1w': '1W'     # 周级别需要大写
+        }
+        return mapping.get(timeframe.lower(), timeframe)
     
     def _create_directory_structure(self):
         """创建数据存储目录结构"""
@@ -205,10 +224,14 @@ class EnhancedDataManager:
         获取单个时间周期的K线数据
         """
         try:
+            # 将时间周期转换为OKX API格式
+            okx_timeframe = self.get_okx_timeframe_format(timeframe)
+            logger.info(f"Using OKX timeframe format: {timeframe} -> {okx_timeframe}")
+            
             # 获取历史K线数据
             kline_df = self.data_fetcher.fetch_kline_data(
                 instrument_id=symbol,
-                bar=timeframe,
+                bar=okx_timeframe,
                 is_mark_price=False,
                 limit=fetch_count
             )
@@ -216,9 +239,9 @@ class EnhancedDataManager:
             if kline_df.empty:
                 return pd.DataFrame()
             
-            # 获取当前未完结K线
+            # 获取当前未完结K线（使用OKX格式）
             try:
-                current_kline_df = self.data_fetcher.get_current_kline(symbol, timeframe)
+                current_kline_df = self.data_fetcher.get_current_kline(symbol, okx_timeframe)
                 if not current_kline_df.empty:
                     kline_df = pd.concat([kline_df, current_kline_df])
             except Exception as e:
