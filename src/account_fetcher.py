@@ -15,8 +15,7 @@ class AccountFetcher:
             flag (str, optional): 交易模式,'0'为实盘,'1'为模拟盘. Defaults to "0".
         """
         # 正确初始化OKX账户API客户端
-        self.okx_api = API(api_key, secret_key, passphrase, False, flag)
-        self.client = Account(self.okx_api)
+        self.client = Account(api_key, secret_key, passphrase, "0", flag)
 
     def _safe_float(self, value, default=0.0):
         """
