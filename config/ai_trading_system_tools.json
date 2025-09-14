@@ -1,0 +1,225 @@
+{
+  "name": "ai_trading_system_tools",
+  "version": "1.0",
+  "description": "AI交易系统分析师的工具授权清单 - 定义AI可以使用的所有分析工具",
+  "tools": [
+    {
+      "name": "get_kline_data",
+      "description": "获取指定时间周期的K线数据和技术指标",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "timeframe": {
+            "type": "string",
+            "enum": ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d", "3d", "1w"],
+            "description": "时间周期，如：1m(1分钟)，1h(1小时)，1d(1天)"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 100,
+            "minimum": 1,
+            "maximum": 300,
+            "description": "获取的K线数量，默认100，最多300"
+          }
+        },
+        "required": ["timeframe"]
+      },
+      "returns": {
+        "type": "object",
+        "description": "包含OHLCV数据和技术指标的完整K线数据",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "K线数据数组，每个元素包含时间戳、开高低收价格、成交量和技术指标"
+          },
+          "indicators": {
+            "type": "object",
+            "description": "技术指标数据，包括RSI、MACD、布林带、ATR等"
+          },
+          "metadata": {
+            "type": "object", 
+            "description": "数据元信息，包括时间周期、数据来源、更新时间等"
+          }
+        }
+      },
+      "usage_notes": [
+        "这是您最常用的工具，用于获取市场的基础技术分析数据",
+        "技术指标已经预计算，包括RSI、MACD、布林带、ATR、随机指标等",
+        "数据包含资金费率信息，对于永续合约分析很重要",
+        "建议优先使用1h、4h时间周期进行中期分析"
+      ]
+    },
+    {
+      "name": "get_market_ticker", 
+      "description": "获取实时市场行情数据",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "default": "BTC-USD-SWAP",
+            "description": "交易对符号，默认为BTC-USD-SWAP"
+          }
+        }
+      },
+      "returns": {
+        "type": "object",
+        "description": "实时市场数据",
+        "properties": {
+          "last_price": {"type": "number", "description": "最新成交价"},
+          "best_bid": {"type": "number", "description": "最优买价"},
+          "best_ask": {"type": "number", "description": "最优卖价"},
+          "24h_high": {"type": "number", "description": "24小时最高价"}, 
+          "24h_low": {"type": "number", "description": "24小时最低价"},
+          "24h_volume": {"type": "number", "description": "24小时成交量"},
+          "funding_rate": {"type": "number", "description": "当前资金费率"},
+          "open_interest": {"type": "number", "description": "未平仓合约"}
+        }
+      },
+      "usage_notes": [
+        "用于获取最新的市场状态和价格信息",
+        "资金费率是永续合约的重要指标，影响持仓成本",
+        "24h数据帮助了解市场波动幅度和活跃程度",
+        "买卖价差(spread)反映市场流动性状况"
+      ]
+    },
+    {
+      "name": "get_latest_price",
+      "description": "快速获取最新价格信息",
+      "parameters": {
+        "type": "object", 
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "default": "BTC-USD-SWAP",
+            "description": "交易对符号"
+          }
+        }
+      },
+      "returns": {
+        "type": "object",
+        "description": "最新价格数据",
+        "properties": {
+          "price": {"type": "number", "description": "当前价格"},
+          "timestamp": {"type": "string", "description": "价格时间戳"},
+          "change_24h": {"type": "number", "description": "24小时变化"},
+          "change_pct": {"type": "number", "description": "24小时变化百分比"}
+        }
+      },
+      "usage_notes": [
+        "最轻量级的价格查询工具",
+        "适合快速确认当前价格水平",
+        "可用于验证其他数据源的价格一致性"
+      ]
+    },
+    {
+      "name": "get_account_balance",
+      "description": "获取账户余额信息",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returns": {
+        "type": "object",
+        "description": "账户余额详情",
+        "properties": {
+          "total_balance": {"type": "number", "description": "总余额"},
+          "available_balance": {"type": "number", "description": "可用余额"},
+          "margin_used": {"type": "number", "description": "已用保证金"},
+          "unrealized_pnl": {"type": "number", "description": "未实现盈亏"}
+        }
+      },
+      "usage_notes": [
+        "用于风险管理和仓位规划",
+        "计算合适的交易金额时必须参考",
+        "监控账户健康度的重要指标"
+      ]
+    },
+    {
+      "name": "get_positions",
+      "description": "获取当前持仓信息",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returns": {
+        "type": "array",
+        "description": "持仓列表",
+        "items": {
+          "type": "object",
+          "properties": {
+            "symbol": {"type": "string", "description": "交易对"},
+            "side": {"type": "string", "description": "方向：long/short"},
+            "size": {"type": "number", "description": "仓位大小"},
+            "entry_price": {"type": "number", "description": "开仓均价"},
+            "mark_price": {"type": "number", "description": "标记价格"},
+            "unrealized_pnl": {"type": "number", "description": "未实现盈亏"},
+            "margin": {"type": "number", "description": "占用保证金"}
+          }
+        }
+      },
+      "usage_notes": [
+        "分析现有持仓对新交易的影响",
+        "评估整体仓位风险敞口",
+        "制定对冲或减仓策略的依据"
+      ]
+    },
+    {
+      "name": "calculate_risk_metrics",
+      "description": "计算风险指标和建议仓位",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "entry_price": {"type": "number", "description": "计划入场价格"},
+          "stop_loss": {"type": "number", "description": "止损价格"},
+          "account_balance": {"type": "number", "description": "账户总余额"},
+          "risk_percentage": {
+            "type": "number", 
+            "default": 2.0,
+            "minimum": 0.5,
+            "maximum": 5.0,
+            "description": "风险百分比，默认2%，最高5%"
+          }
+        },
+        "required": ["entry_price", "stop_loss", "account_balance"]
+      },
+      "returns": {
+        "type": "object", 
+        "description": "风险计算结果",
+        "properties": {
+          "suggested_position_size": {"type": "number", "description": "建议仓位大小"},
+          "max_loss": {"type": "number", "description": "最大可能损失"},
+          "risk_reward_ratio": {"type": "number", "description": "风险收益比"},
+          "margin_required": {"type": "number", "description": "所需保证金"}
+        }
+      },
+      "usage_notes": [
+        "每次制定交易计划时必须使用",
+        "确保仓位大小符合风险管理原则",
+        "帮助客观评估交易的风险收益比"
+      ]
+    }
+  ],
+  "tool_usage_principles": [
+    "🔄 工作流程原则：严格按照 制定计划 → 调用工具 → 分析结果 的流程执行",
+    "📊 数据驱动：所有分析必须基于实时工具数据，禁止使用假设或记忆数据",
+    "⚠️ 风险优先：每次建议前必须调用风险计算工具评估",
+    "🎯 目标明确：每次工具调用前说明调用目的和预期结果",
+    "🔍 数据验证：获取数据后要验证时效性和合理性",
+    "⏱️ 合理频率：避免短时间内重复调用相同工具",
+    "❌ 错误处理：工具调用失败时明确说明对分析的影响"
+  ],
+  "security_constraints": [
+    "🛡️ 只能获取数据，不能执行任何交易操作",
+    "👁️ 所有工具调用都会被记录和审计",
+    "⚡ 工具调用有频率限制，请合理使用",
+    "🚫 禁止尝试访问未授权的数据或功能"
+  ],
+  "response_format_requirements": {
+    "analysis_plan": "📋 分析计划：明确说明要做什么、用什么工具、关注什么指标",
+    "tool_calls": "🔍 数据获取：逐一调用工具，说明每次调用的目的",
+    "analysis_report": "📊 分析报告：按照标准格式提供完整的技术分析",
+    "risk_assessment": "⚠️ 风险评估：必须包含风险等级和具体风险因素",
+    "actionable_advice": "💡 操作建议：具体的入场、止损、止盈建议"
+  }
+}
