@@ -8,6 +8,15 @@ This is an AI-powered automated trading system built on a Multi-Agent Cooperatio
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### September 14, 2025 - Major Data Management Redesign
+- **Short Filename System**: Changed from complex timestamped filenames to simple format (1m.csv, 5m.csv, 1h.csv, 2h.csv, etc.)
+- **Data Overwrite Mode**: System now overwrites previous K-line data instead of creating new files each run
+- **Automatic Cleanup**: Implemented cleanup logic to remove timeframes not fetched in current run
+- **MCP Compatibility Maintained**: Updated manifest system to work with new filename structure
+- **File Corruption Fix**: Resolved corrupted enhanced_data_manager.py and rewrote with clean architecture
+
 ## System Architecture
 
 ### Core Architecture Pattern
