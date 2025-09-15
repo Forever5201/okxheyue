@@ -180,6 +180,10 @@ ai_analysis:
       - "calculate_indicators"   # 技术指标计算
     analysis_timeout: 300        # 分析超时时间（秒）
     max_tool_calls: 20          # 单次分析最大工具调用次数
+    observability:
+      log_prompt_meta: false    # 是否记录系统提示词的元信息（长度/哈希）
+      preview_chars: 0          # 提示词预览前N字符（0为不预览）
+      audit_to_system_logs: true # 是否将审计写入 system_logs
   
 # 风险控制配置
 risk_management:

@@ -1,8 +1,68 @@
 from okx.api import API, Account
 from src.logger import setup_logger
 import json
+import os
+import requests
 
 logger = setup_logger()
+
+# --- Begin: Defensive network configuration to prevent proxies type errors ---
+
+def _coerce_to_requests_proxies(proxies_value):
+    """
+    Convert various proxy representations into the dict format expected by requests.
+    Accepts None, dict, JSON-string dict, or a single URL string. Returns dict or None.
+    """
+    if proxies_value is None:
+        return None
+    if isinstance(proxies_value, dict):
+        return proxies_value
+    if isinstance(proxies_value, str):
+        text = proxies_value.strip()
+        if not text:
+            return None
+        # Attempt to parse JSON object string first
+        try:
+            if text.startswith("{") and text.endswith("}"):
+                parsed = json.loads(text)
+                if isinstance(parsed, dict):
+                    return parsed
+        except Exception:
+            pass
+        # Fallback: treat as one proxy URL for both http and https
+        return {"http": text, "https": text}
+    # Unknown types are ignored
+    return None
+
+
+def _install_requests_proxies_sanitizer_once():
+    """
+    Patch requests' Session.request to sanitize a string 'proxies' argument into a dict.
+    Prevents AttributeError: 'str' object has no attribute 'get' inside requests.
+    """
+    sentinel_attr = "_request_patched_for_proxies"
+    if getattr(requests.sessions.Session, sentinel_attr, False):
+        return
+
+    original_request = requests.sessions.Session.request
+
+    def request_with_sanitized_proxies(self, method, url, **kwargs):
+        if "proxies" in kwargs:
+            kwargs["proxies"] = _coerce_to_requests_proxies(kwargs["proxies"])
+        return original_request(self, method, url, **kwargs)
+
+    requests.sessions.Session.request = request_with_sanitized_proxies
+    setattr(requests.sessions.Session, sentinel_attr, True)
+
+
+# Remove a non-standard env var that some SDKs might incorrectly read as a literal string
+for env_key in ("proxies", "PROXIES"):
+    if os.environ.get(env_key):
+        os.environ.pop(env_key, None)
+
+_install_requests_proxies_sanitizer_once()
+
+# --- End: Defensive network configuration ---
 
 class AccountFetcher:
     def __init__(self, api_key, secret_key, passphrase, flag="0"):
