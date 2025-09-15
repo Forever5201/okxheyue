@@ -80,6 +80,10 @@ class AIOrchestrator:
         self.agent_config = self.config.get('ai_analysis', {}).get('analysis_agent', {})
         self.max_tool_calls = int(self.agent_config.get('max_tool_calls', 20))
         self.analysis_timeout_seconds = int(self.agent_config.get('analysis_timeout', 300))
+        self.observability = self.agent_config.get('observability', {})
+        self.log_prompt_meta: bool = bool(self.observability.get('log_prompt_meta', False))
+        self.prompt_preview_chars: int = int(self.observability.get('preview_chars', 0))
+        self.audit_to_system_logs: bool = bool(self.observability.get('audit_to_system_logs', True))
 
         # 加载AI配置文件
         self.system_prompt = self._load_system_prompt()
@@ -385,6 +389,19 @@ class AIOrchestrator:
             run_id = str(uuid.uuid4())
             token_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
             tool_call_records: List[Dict[str, Any]] = []
+
+            # 记录提示词元信息（脱敏）
+            try:
+                if self.log_prompt_meta:
+                    sp = self.system_prompt or ""
+                    import hashlib
+                    prompt_hash = hashlib.sha256(sp.encode('utf-8')).hexdigest()[:16]
+                    preview = sp[: self.prompt_preview_chars] if self.prompt_preview_chars > 0 else ""
+                    analysis_log.append(
+                        f"Prompt meta: len={len(sp)}, sha256[0:16]={prompt_hash}, preview={preview!r}"
+                    )
+            except Exception:
+                pass
             
             while iteration < max_iterations:
                 iteration += 1
@@ -476,10 +493,21 @@ class AIOrchestrator:
             }
 
             # 写入系统运行摘要
-            try:
-                self._write_run_summary(run_id, result_payload)
-            except Exception as werr:
-                logger.warning(f"写入运行摘要失败: {werr}")
+            if self.audit_to_system_logs:
+                try:
+                    # 附加 prompt 元信息到摘要
+                    sp = self.system_prompt or ""
+                    import hashlib
+                    prompt_meta = {
+                        "length": len(sp),
+                        "sha256_16": hashlib.sha256(sp.encode('utf-8')).hexdigest()[:16]
+                    }
+                    if self.prompt_preview_chars > 0:
+                        prompt_meta["preview"] = sp[: self.prompt_preview_chars]
+                    result_payload["prompt_meta"] = prompt_meta
+                    self._write_run_summary(run_id, result_payload)
+                except Exception as werr:
+                    logger.warning(f"写入运行摘要失败: {werr}")
 
             return result_payload
             
