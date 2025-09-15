@@ -9,6 +9,8 @@ AI Trading System Orchestrator - Project Manager Pattern
 
 import json
 import logging
+import os
+import time
 import requests
 from datetime import datetime
 from pathlib import Path
@@ -34,6 +36,10 @@ class ToolResult:
     success: bool
     data: Any = None
     error_message: str = None
+    name: Optional[str] = None
+    parameters: Optional[Dict[str, Any]] = None
+    latency_ms: Optional[float] = None
+    status_code: Optional[int] = None
 
 class AIOrchestrator:
     """
@@ -69,9 +75,20 @@ class AIOrchestrator:
         self.mcp_port = self.mcp_config.get('port', 5000)
         self.mcp_api_key: Optional[str] = None  # 将从环境变量加载
         
+        # 分析代理预算与约束配置
+        self.agent_config = self.config.get('ai_analysis', {}).get('analysis_agent', {})
+        self.max_tool_calls = int(self.agent_config.get('max_tool_calls', 20))
+        self.analysis_timeout_seconds = int(self.agent_config.get('analysis_timeout', 300))
+
         # 加载AI配置文件
         self.system_prompt = self._load_system_prompt()
         self.tools_definition = self._load_tools_definition()
+        self.tool_param_schemas = {
+            t.get('name'): t.get('parameters') for t in self.tools_definition.get('tools', [])
+        }
+        self.tool_return_schemas = {
+            t.get('name'): t.get('returns') for t in self.tools_definition.get('tools', [])
+        }
         
         # 对话历史
         self.conversation_history = []
@@ -87,6 +104,14 @@ class AIOrchestrator:
         }
         
         logger.info("AI Orchestrator initialized successfully")
+        
+        # 尝试加载 JSON Schema 校验库
+        try:
+            from jsonschema import Draft7Validator  # noqa: F401
+            self._jsonschema_available = True
+        except Exception:
+            self._jsonschema_available = False
+            logger.warning("jsonschema not available; tool parameter validation will be basic only")
     
     def _load_system_prompt(self) -> str:
         """加载AI系统提示词"""
@@ -165,29 +190,74 @@ class AIOrchestrator:
             logger.info(f"AI正在调用工具: {tool_name} -> {mcp_endpoint}")
             logger.info(f"工具参数: {json.dumps(tool_call.parameters, ensure_ascii=False, indent=2)}")
             
+            # 工具入参 Schema 校验
+            try:
+                self._validate_tool_parameters(tool_name, tool_call.parameters)
+            except Exception as ve:
+                logger.error(f"工具参数校验失败: {ve}")
+                return ToolResult(
+                    call_id=tool_call.call_id,
+                    success=False,
+                    error_message=f"参数不符合工具契约: {ve}",
+                    name=tool_name,
+                    parameters=tool_call.parameters
+                )
+
+            # 根据契约转换参数到 MCP 端点实际需要的格式
+            outgoing_params: Dict[str, Any] = dict(tool_call.parameters or {})
+            if tool_name == 'get_kline_data' and mcp_endpoint == '/get_kline':
+                try:
+                    timeframe = outgoing_params.get('timeframe')
+                    limit = int(outgoing_params.get('limit', 100))
+                    limit = max(1, min(limit, 300))
+                    mapped_name = self._map_timeframe_to_authorized_filename(timeframe)
+                    outgoing_params = {
+                        'name': mapped_name,
+                        'max_bars': limit
+                    }
+                except Exception as map_err:
+                    return ToolResult(
+                        call_id=tool_call.call_id,
+                        success=False,
+                        error_message=f"时间周期映射失败: {map_err}",
+                        name=tool_name,
+                        parameters=tool_call.parameters
+                    )
+
+            # 发起请求
+            start_ms = time.perf_counter()
             # 发送请求到MCP服务
             if mcp_endpoint in ['/get_kline']:
                 # POST请求
-                response = requests.post(mcp_url, 
-                                       headers=headers,
-                                       json=tool_call.parameters,
-                                       timeout=30)
+                response = requests.post(
+                    mcp_url,
+                    headers=headers,
+                    json=outgoing_params,
+                    timeout=30
+                )
             else:
                 # GET请求
-                response = requests.get(mcp_url,
-                                      headers=headers,
-                                      params=tool_call.parameters,
-                                      timeout=30)
+                response = requests.get(
+                    mcp_url,
+                    headers=headers,
+                    params=outgoing_params,
+                    timeout=30
+                )
             
             response.raise_for_status()
             result_data = response.json()
             
             # 成功返回结果
             logger.info(f"工具调用成功: {tool_name}")
+            latency_ms = (time.perf_counter() - start_ms) * 1000.0
             return ToolResult(
                 call_id=tool_call.call_id,
                 success=True,
-                data=result_data
+                data=result_data,
+                name=tool_name,
+                parameters=outgoing_params,
+                latency_ms=latency_ms,
+                status_code=response.status_code
             )
             
         except requests.exceptions.RequestException as e:
@@ -196,7 +266,9 @@ class AIOrchestrator:
             return ToolResult(
                 call_id=tool_call.call_id,
                 success=False,
-                error_message=error_msg
+                error_message=error_msg,
+                name=tool_call.name,
+                parameters=tool_call.parameters
             )
         except Exception as e:
             error_msg = f"工具调用异常: {str(e)}"
@@ -204,7 +276,9 @@ class AIOrchestrator:
             return ToolResult(
                 call_id=tool_call.call_id,
                 success=False,
-                error_message=error_msg
+                error_message=error_msg,
+                name=tool_call.name,
+                parameters=tool_call.parameters
             )
     
     def send_ai_request(self, messages: List[Dict], tools: Optional[List[Dict]] = None) -> Dict:
@@ -289,13 +363,19 @@ class AIOrchestrator:
             openai_tools = self._convert_tools_to_openai_format()
             
             # 执行多轮对话
-            analysis_log = []
-            max_iterations = 10  # 防止无限循环
+            analysis_log: List[str] = []
+            max_iterations = 10
             iteration = 0
+            tool_calls_used = 0
+            run_start_time = time.time()
+            tool_call_records: List[Dict[str, Any]] = []
             
             while iteration < max_iterations:
                 iteration += 1
                 analysis_log.append(f"--- 第{iteration}轮对话 ---")
+                if (time.time() - run_start_time) > self.analysis_timeout_seconds:
+                    analysis_log.append("⏱️ 达到分析总时长限制，提前结束")
+                    break
                 
                 # 发送请求给AI
                 ai_response = self.send_ai_request(messages, openai_tools)
@@ -315,6 +395,9 @@ class AIOrchestrator:
                 # 执行工具调用
                 tool_results = []
                 for tool_call in tool_calls:
+                    if tool_calls_used >= self.max_tool_calls:
+                        analysis_log.append("🧮 已达到max_tool_calls限制，停止执行更多工具调用")
+                        break
                     function_call = tool_call['function']
                     
                     # 创建工具调用对象
@@ -327,6 +410,15 @@ class AIOrchestrator:
                     # 执行工具调用
                     result = self.execute_tool_call(call_request)
                     tool_results.append(result)
+                    tool_calls_used += 1
+                    tool_call_records.append({
+                        "name": result.name or call_request.name,
+                        "parameters": result.parameters or call_request.parameters,
+                        "success": result.success,
+                        "latency_ms": result.latency_ms,
+                        "status_code": result.status_code,
+                        "call_id": result.call_id
+                    })
                     
                     # 记录到分析日志
                     if result.success:
@@ -344,13 +436,15 @@ class AIOrchestrator:
                     messages.append(tool_message)
             
             # 返回最终结果
-            final_response = messages[-1]['content'] if messages[-1]['role'] == 'assistant' else "分析未完成"
+            final_text = messages[-1]['content'] if messages[-1]['role'] == 'assistant' else "分析未完成"
+            structured_output = self._structure_final_analysis(final_text, tool_call_records)
             
             return {
                 "success": True,
-                "analysis": final_response,
+                "analysis": structured_output,
                 "execution_log": analysis_log,
                 "iterations": iteration,
+                "tool_calls_used": tool_calls_used,
                 "timestamp": datetime.utcnow().isoformat() + 'Z'
             }
             
@@ -380,6 +474,78 @@ class AIOrchestrator:
             openai_tools.append(openai_tool)
         
         return openai_tools
+    
+    def _validate_tool_parameters(self, tool_name: str, params: Dict[str, Any]):
+        """根据 tools_definition 对工具入参进行校验。jsonschema 可用则严格校验，否则做基本必填检查。"""
+        schema = self.tool_param_schemas.get(tool_name)
+        if not schema:
+            return
+        if self._jsonschema_available:
+            try:
+                from jsonschema import validate
+                validate(instance=params or {}, schema=schema)
+            except Exception as e:
+                raise ValueError(str(e))
+        else:
+            required = (schema or {}).get('required', [])
+            for key in required:
+                if key not in (params or {}):
+                    raise ValueError(f"缺少必填参数: {key}")
+    
+    def _map_timeframe_to_authorized_filename(self, timeframe: str) -> str:
+        """把 timeframe 映射到 manifest.json 白名单文件名。优先读取 manifest 校验。"""
+        if not timeframe:
+            raise ValueError("timeframe 为空")
+        tf = str(timeframe).lower()
+        storage_dir = self.config.get('storage', {}).get('base_directory', 'kline_data')
+        manifest_path = Path(storage_dir) / 'manifest.json'
+        candidate = f"{tf}/{tf}.csv"
+        if manifest_path.exists():
+            try:
+                with open(manifest_path, 'r', encoding='utf-8') as f:
+                    manifest = json.load(f)
+                files = set(manifest.get('files', []))
+                if candidate in files:
+                    return candidate
+                else:
+                    raise ValueError(f"文件未授权: {candidate}")
+            except Exception as e:
+                raise ValueError(f"读取manifest失败: {e}")
+        return candidate
+    
+    def _structure_final_analysis(self, content: str, tool_call_records: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """把最终回答整理为固定结构，便于前端与审计使用。"""
+        def extract_section(text: str, marker: str) -> Optional[str]:
+            if marker in text:
+                start = text.find(marker)
+                next_markers = [m for m in ["📊", "⚠️", "💡", "🔄", "📋"] if m != marker and m in text]
+                ends = [text.find(m, start + 1) for m in next_markers]
+                ends = [e for e in ends if e != -1]
+                end = min(ends) if ends else len(text)
+                return text[start:end].strip()
+            return None
+
+        analysis_plan = extract_section(content, "📋")
+        analysis_report = extract_section(content, "📊")
+        risk_assessment = extract_section(content, "⚠️")
+        actionable_advice = extract_section(content, "💡")
+        monitoring_notes = extract_section(content, "🔄")
+
+        return {
+            "analysis_plan": analysis_plan,
+            "analysis_report": analysis_report,
+            "risk_assessment": risk_assessment,
+            "actionable_advice": actionable_advice,
+            "monitoring_notes": monitoring_notes,
+            "tool_calls": tool_call_records,
+            "raw": content,
+            "compliance_flags": {
+                "has_analysis_plan": bool(analysis_plan),
+                "has_analysis_report": bool(analysis_report),
+                "has_risk_assessment": bool(risk_assessment),
+                "has_actionable_advice": bool(actionable_advice)
+            }
+        }
     
     def get_analysis_status(self) -> Dict:
         """获取分析系统状态"""

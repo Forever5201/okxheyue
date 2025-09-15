@@ -15,7 +15,7 @@ MCP (Model Control Protocol) 服务
 """
 
 from fastapi import FastAPI, HTTPException, Header, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 import os, json, datetime
 import pandas as pd
@@ -118,10 +118,13 @@ class DeauthorizeReq(BaseModel):
     files: List[str]
 
 class KlineReq(BaseModel):
-    name: str  # 文件名，如 "1H/BTC-USD-SWAP_1H_latest.csv"
+    # 兼容两种调用：直接通过文件名，或通过 timeframe/limit 契约
+    name: Optional[str] = Field(default=None, description="授权文件名，如 '1h/1h.csv'")
+    timeframe: Optional[str] = Field(default=None, description="时间周期：1m,5m,15m,30m,1h,2h,4h,6h,12h,1d,3d,1w")
+    limit: Optional[int] = Field(default=None, description="返回K线条数，默认100，最大300")
     start: Optional[str] = None  # 开始时间，格式如 "2024-01-01 00:00:00"
     end: Optional[str] = None    # 结束时间
-    max_bars: Optional[int] = 500  # 最大返回行数
+    max_bars: Optional[int] = 500  # 最大返回行数（与limit二选一，limit优先生效）
 
 class ReadTailReq(BaseModel):
     name: str
@@ -288,13 +291,21 @@ def read_file(file_path: str, api_key: str = Depends(get_api_key)):
 def get_kline(req: KlineReq, api_key: str = Depends(get_api_key)):
     """读取 K 线数据（核心功能）"""
     try:
+        # 解析 name：优先使用传入的 name；否则根据 timeframe 映射
+        name = req.name
+        if not name:
+            if not req.timeframe:
+                raise HTTPException(status_code=400, detail="either 'name' or 'timeframe' is required")
+            tf = str(req.timeframe).lower()
+            name = f"{tf}/{tf}.csv"
+
         # 检查文件是否在白名单中
-        if not is_allowed(req.name):
-            raise HTTPException(status_code=403, detail=f"file not authorized: {req.name}")
+        if not is_allowed(name):
+            raise HTTPException(status_code=403, detail=f"file not authorized: {name}")
         
-        full_path = safe_join(req.name)
+        full_path = safe_join(name)
         if not os.path.exists(full_path):
-            raise HTTPException(status_code=404, detail=f"file not found: {req.name}")
+            raise HTTPException(status_code=404, detail=f"file not found: {name}")
         
         # 读取 CSV 数据
         try:
@@ -317,8 +328,11 @@ def get_kline(req: KlineReq, api_key: str = Depends(get_api_key)):
             else:
                 logger.warning(f"Time filtering requested but no 'timestamp' column in {req.name}")
         
-        # 限制返回行数
-        max_bars = min(req.max_bars or 500, MAX_BARS_LIMIT)
+        # 限制返回行数：limit 优先，否则用 max_bars
+        effective_limit = req.limit if req.limit is not None else req.max_bars
+        if effective_limit is None:
+            effective_limit = 500
+        max_bars = min(int(effective_limit), MAX_BARS_LIMIT)
         if len(df) > max_bars:
             df = df.tail(max_bars)  # 取最新的数据
         
@@ -335,13 +349,29 @@ def get_kline(req: KlineReq, api_key: str = Depends(get_api_key)):
             "api_key_hash": hash(api_key) % 10000
         })
         
+        # 提取指标列，拆分为 indicators 与原始数据列
+        indicator_prefixes = [
+            'SMA_', 'EMA_', 'RSI', 'MACD', 'MACD_Signal', 'MACD_Histogram',
+            'BB_', 'ATR', 'Stoch_', 'Williams_R', 'CCI', 'VWAP', 'Volume_RSI', 'OBV',
+            'Momentum', 'ROC', 'RSI_', 'Trend_', 'BB_Squeeze', 'BB_Breakout'
+        ]
+        base_columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'is_closed']
+        columns = list(df.columns)
+        indicator_cols = [c for c in columns if any(c.startswith(p) for p in indicator_prefixes)]
+        base_cols_present = [c for c in base_columns if c in columns]
+        data_records = df[base_cols_present].to_dict('records') if base_cols_present else df.to_dict('records')
+
+        indicators_obj = {col: df[col].tolist() for col in indicator_cols}
+
         return {
-            "file": req.name,
-            "data": df.to_dict('records'),
+            "file": name,
+            "data": data_records,
+            "indicators": indicators_obj,
             "metadata": {
                 "total_rows": len(df),
                 "original_rows": original_count,
                 "columns": list(df.columns),
+                "indicator_columns": indicator_cols,
                 "start_time": req.start,
                 "end_time": req.end,
                 "file_fingerprint": file_fingerprint(full_path)
@@ -526,11 +556,16 @@ def get_account_balance(api_key: str = Depends(get_api_key)):
         
         if 'balance' in account_data and account_data['balance']:
             balance_info = account_data['balance']
+            # 归一化 margin_used：优先使用 total_equity - available_balance - margin_frozen
+            total = float(balance_info.get("balance", balance_info.get("total_equity", 0) or 0))
+            available = float(balance_info.get("available_balance", 0) or 0)
+            frozen = float(balance_info.get("margin_frozen", 0) or 0)
+            margin_used = float(balance_info.get("margin_used", (total - available - frozen)))
             return {
-                "total_balance": balance_info.get("balance", 0),
-                "available_balance": balance_info.get("available_balance", 0),
-                "margin_used": balance_info.get("margin_used", 0),
-                "unrealized_pnl": balance_info.get("unrealized_pnl", 0)
+                "total_balance": total,
+                "available_balance": available,
+                "margin_used": max(0.0, margin_used),
+                "unrealized_pnl": float(balance_info.get("unrealized_pnl", 0) or 0)
             }
         else:
             # 返回模拟数据以供测试
@@ -565,7 +600,35 @@ def get_positions(api_key: str = Depends(get_api_key)):
         })
         
         if 'positions' in account_data:
-            return account_data['positions']
+            # 进行字段映射，统一为 Tools.json 期望的 schema
+            normalized_positions = []
+            for p in account_data['positions']:
+                try:
+                    side_raw = p.get('position_side') or p.get('posSide') or ''
+                    side = 'long' if str(side_raw).lower().startswith('long') or side_raw in ['long', 'net'] else 'short' if str(side_raw).lower().startswith('short') else ''
+                    size = p.get('position_amount') if 'position_amount' in p else p.get('pos')
+                    entry_price = p.get('avg_price') if 'avg_price' in p else p.get('avgPx')
+                    mark_price = p.get('mark_price') if 'mark_price' in p else p.get('markPx')
+                    unrealized = p.get('unrealized_pnl') if 'unrealized_pnl' in p else p.get('upl')
+                    margin = None
+                    if isinstance(p.get('margin'), dict):
+                        margin = p['margin'].get('margin_balance') or p['margin'].get('initial')
+                    elif 'margin' in p:
+                        margin = p.get('margin')
+
+                    normalized_positions.append({
+                        'symbol': p.get('symbol') or p.get('instId') or '',
+                        'side': side,
+                        'size': float(size) if size is not None else 0.0,
+                        'entry_price': float(entry_price) if entry_price is not None else 0.0,
+                        'mark_price': float(mark_price) if mark_price is not None else 0.0,
+                        'unrealized_pnl': float(unrealized) if unrealized is not None else 0.0,
+                        'margin': float(margin) if margin is not None else 0.0
+                    })
+                except Exception as map_err:
+                    logger.warning(f"Position schema normalize error: {map_err}")
+                    continue
+            return normalized_positions
         else:
             # 返回空持仓
             return []
