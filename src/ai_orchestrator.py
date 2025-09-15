@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import time
+import uuid
 import requests
 from datetime import datetime
 from pathlib import Path
@@ -246,6 +247,19 @@ class AIOrchestrator:
             
             response.raise_for_status()
             result_data = response.json()
+
+            # 工具返回 Schema 校验
+            try:
+                self._validate_tool_returns(tool_name, result_data)
+            except Exception as ve:
+                logger.error(f"工具返回校验失败: {ve}")
+                return ToolResult(
+                    call_id=tool_call.call_id,
+                    success=False,
+                    error_message=f"返回不符合工具契约: {ve}",
+                    name=tool_name,
+                    parameters=outgoing_params
+                )
             
             # 成功返回结果
             logger.info(f"工具调用成功: {tool_name}")
@@ -368,6 +382,8 @@ class AIOrchestrator:
             iteration = 0
             tool_calls_used = 0
             run_start_time = time.time()
+            run_id = str(uuid.uuid4())
+            token_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
             tool_call_records: List[Dict[str, Any]] = []
             
             while iteration < max_iterations:
@@ -379,6 +395,15 @@ class AIOrchestrator:
                 
                 # 发送请求给AI
                 ai_response = self.send_ai_request(messages, openai_tools)
+
+                # 累计 token 用量（如可用）
+                try:
+                    usage = ai_response.get('usage') or {}
+                    token_usage['prompt_tokens'] += int(usage.get('prompt_tokens', 0))
+                    token_usage['completion_tokens'] += int(usage.get('completion_tokens', 0))
+                    token_usage['total_tokens'] += int(usage.get('total_tokens', usage.get('prompt_tokens', 0) + usage.get('completion_tokens', 0)))
+                except Exception:
+                    pass
                 
                 # 解析AI响应
                 message = ai_response['choices'][0]['message']
@@ -439,14 +464,24 @@ class AIOrchestrator:
             final_text = messages[-1]['content'] if messages[-1]['role'] == 'assistant' else "分析未完成"
             structured_output = self._structure_final_analysis(final_text, tool_call_records)
             
-            return {
+            result_payload = {
                 "success": True,
                 "analysis": structured_output,
                 "execution_log": analysis_log,
                 "iterations": iteration,
                 "tool_calls_used": tool_calls_used,
-                "timestamp": datetime.utcnow().isoformat() + 'Z'
+                "timestamp": datetime.utcnow().isoformat() + 'Z',
+                "run_id": run_id,
+                "token_usage": token_usage
             }
+
+            # 写入系统运行摘要
+            try:
+                self._write_run_summary(run_id, result_payload)
+            except Exception as werr:
+                logger.warning(f"写入运行摘要失败: {werr}")
+
+            return result_payload
             
         except Exception as e:
             logger.error(f"市场分析执行失败: {e}")
@@ -491,6 +526,27 @@ class AIOrchestrator:
             for key in required:
                 if key not in (params or {}):
                     raise ValueError(f"缺少必填参数: {key}")
+    
+    def _validate_tool_returns(self, tool_name: str, result: Any):
+        """根据 tools_definition 对工具返回进行校验。"""
+        schema = self.tool_return_schemas.get(tool_name)
+        if not schema:
+            return
+        if self._jsonschema_available:
+            try:
+                from jsonschema import validate
+                validate(instance=result, schema=schema)
+            except Exception as e:
+                raise ValueError(str(e))
+        else:
+            # 基础校验：如果是对象并声明了properties，则检查关键字段存在
+            if isinstance(result, dict):
+                properties = (schema or {}).get('properties', {})
+                for key in properties.keys():
+                    if key not in result:
+                        # 仅对关键输出字段做基本要求
+                        if tool_name == 'get_kline_data' and key in ('data', 'metadata'):
+                            raise ValueError(f"缺少关键返回字段: {key}")
     
     def _map_timeframe_to_authorized_filename(self, timeframe: str) -> str:
         """把 timeframe 映射到 manifest.json 白名单文件名。优先读取 manifest 校验。"""
@@ -546,6 +602,18 @@ class AIOrchestrator:
                 "has_actionable_advice": bool(actionable_advice)
             }
         }
+
+    def _write_run_summary(self, run_id: str, payload: Dict[str, Any]):
+        """把本次分析运行摘要写入 system_logs，并更新 latest_run_summary.json。"""
+        system_logs_dir = Path('system_logs')
+        system_logs_dir.mkdir(exist_ok=True)
+        timestamp_str = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        out_file = system_logs_dir / f"analysis_summary_{timestamp_str}.json"
+        with open(out_file, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+        latest_path = system_logs_dir / 'latest_run_summary.json'
+        with open(latest_path, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
     
     def get_analysis_status(self) -> Dict:
         """获取分析系统状态"""

@@ -28,6 +28,7 @@
         "type": "object",
         "description": "包含OHLCV数据和技术指标的完整K线数据",
         "properties": {
+          "file": {"type": "string", "description": "来源文件名，如 1h/1h.csv"},
           "data": {
             "type": "array",
             "description": "K线数据数组，每个元素包含时间戳、开高低收价格、成交量和技术指标"
@@ -38,9 +39,19 @@
           },
           "metadata": {
             "type": "object", 
-            "description": "数据元信息，包括时间周期、数据来源、更新时间等"
+            "description": "数据元信息，包括时间周期、数据来源、更新时间等",
+            "properties": {
+              "total_rows": {"type": "integer"},
+              "original_rows": {"type": "integer"},
+              "columns": {"type": "array"},
+              "indicator_columns": {"type": "array"},
+              "start_time": {"type": ["string", "null"]},
+              "end_time": {"type": ["string", "null"]},
+              "file_fingerprint": {"type": "string"}
+            }
           }
-        }
+        },
+        "required": ["data", "metadata"]
       },
       "usage_notes": [
         "这是您最常用的工具，用于获取市场的基础技术分析数据",
