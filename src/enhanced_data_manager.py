@@ -9,6 +9,7 @@ Enhanced Data Manager
 import os
 import pandas as pd
 import json
+import concurrent.futures
 from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
@@ -125,7 +126,7 @@ class EnhancedDataManager:
     
     def fetch_and_process_kline_data(self, symbol=None, timeframes=None):
         """
-        获取并处理K线数据
+        获取并处理K线数据 - 优化版本，支持并发处理和实时进度显示
         
         Args:
             symbol (str): 交易对，默认使用配置中的
@@ -152,72 +153,162 @@ class EnhancedDataManager:
             }
         }
         
-        processed_timeframes = []
+        logger.info(f"🚀 开始获取 {symbol} 的 {len(timeframes)} 个时间周期数据...")
         
-        for timeframe in timeframes:
-            try:
-                logger.info(f"Processing {timeframe} data for {symbol}...")
+        # 使用线程池并发处理以提高效率
+        max_workers = min(4, len(timeframes))  # 限制并发数以避免API限制
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # 提交所有任务
+            future_to_timeframe = {
+                executor.submit(self._process_single_timeframe, symbol, tf): tf 
+                for tf in timeframes
+            }
+            
+            # 收集结果并显示进度
+            completed = 0
+            for future in concurrent.futures.as_completed(future_to_timeframe):
+                timeframe = future_to_timeframe[future]
+                completed += 1
                 
-                # 获取配置
-                kline_config = self.config.get('kline_config', {}).get(timeframe, {})
-                fetch_count = kline_config.get('fetch_count', 100)
-                output_count = kline_config.get('output_count', 50)
-                
-                # 获取K线数据
-                kline_data = self._fetch_single_timeframe_data(
-                    symbol, timeframe, fetch_count, output_count
-                )
-                
-                if kline_data.empty:
-                    logger.warning(f"No data received for {timeframe}")
+                try:
+                    result = future.result(timeout=60)  # 每个时间周期最多等待60秒
+                    if result['success']:
+                        results['success'].append(result['data'])
+                        logger.info(f"[{completed}/{len(timeframes)}] {timeframe} processing completed ({result['data']['records_count']} records)")
+                    else:
+                        results['failed'].append({
+                            'timeframe': timeframe,
+                            'reason': result['error']
+                        })
+                        logger.warning(f"[{completed}/{len(timeframes)}] {timeframe} processing failed: {result['error']}")
+                        
+                except concurrent.futures.TimeoutError:
+                    logger.error(f"[{completed}/{len(timeframes)}] {timeframe} processing timeout")
                     results['failed'].append({
                         'timeframe': timeframe,
-                        'reason': 'No data received'
+                        'reason': 'Processing timeout (60s)'
                     })
-                    continue
-                
-                # 计算技术指标
-                category = self.get_category_for_timeframe(timeframe)
-                kline_data_with_indicators = self.indicator_calculator.calculate_all_indicators(
-                    kline_data.copy(), category
-                )
-                
-                # 添加信号分析
-                kline_data_with_indicators = self.indicator_calculator.add_signal_analysis(
-                    kline_data_with_indicators
-                )
-                
-                # 保存数据（使用新的短文件名格式）
-                save_result = self._save_data(
-                    kline_data, kline_data_with_indicators, 
-                    symbol, timeframe
-                )
-                
-                processed_timeframes.append(self.normalize_timeframe(timeframe))
-                
-                results['success'].append({
+                except Exception as e:
+                    logger.error(f"[{completed}/{len(timeframes)}] {timeframe} processing exception: {e}")
+                    results['failed'].append({
+                        'timeframe': timeframe,
+                        'reason': str(e)
+                    })
+        
+        # 处理结果汇总
+        processed_timeframes = [item['timeframe'] for item in results['success']]
+        processed_normalized = [self.normalize_timeframe(tf) for tf in processed_timeframes]
+        
+        # 清理未获取的时间周期数据
+        self.cleanup_unused_timeframes(processed_normalized)
+        
+        # 更新MCP清单
+        self.update_mcp_manifest(processed_normalized)
+        
+        # 自动授权新生成的文件给MCP服务
+        self._authorize_new_files(results)
+        
+        success_count = len(results['success'])
+        failed_count = len(results['failed'])
+        logger.info(f"Data fetching completed: success {success_count}, failed {failed_count}")
+        
+        return results
+    
+    def _process_single_timeframe(self, symbol, timeframe):
+        """
+        处理单个时间周期的数据获取（线程安全）
+        
+        Args:
+            symbol (str): 交易对
+            timeframe (str): 时间周期
+        
+        Returns:
+            dict: 处理结果
+        """
+        try:
+            # 获取配置
+            kline_config = self.config.get('kline_config', {}).get(timeframe, {})
+            fetch_count = kline_config.get('fetch_count', 100)
+            output_count = kline_config.get('output_count', 50)
+            
+            # 获取K线数据
+            kline_data = self._fetch_single_timeframe_data(
+                symbol, timeframe, fetch_count, output_count
+            )
+            
+            if kline_data.empty:
+                return {
+                    'success': False,
+                    'error': 'No data received',
+                    'timeframe': timeframe
+                }
+            
+            # 计算技术指标
+            category = self.get_category_for_timeframe(timeframe)
+            kline_data_with_indicators = self.indicator_calculator.calculate_all_indicators(
+                kline_data.copy(), category
+            )
+            
+            # 添加信号分析
+            kline_data_with_indicators = self.indicator_calculator.add_signal_analysis(
+                kline_data_with_indicators
+            )
+            
+            # 保存数据
+            save_result = self._save_data(
+                kline_data, kline_data_with_indicators, 
+                symbol, timeframe
+            )
+            
+            return {
+                'success': True,
+                'data': {
                     'timeframe': timeframe,
                     'records_count': len(kline_data_with_indicators),
                     'file_paths': save_result,
                     'category': category
-                })
-                
-                logger.info(f"Successfully processed {timeframe}: {len(kline_data_with_indicators)} records")
-                
-            except Exception as e:
-                logger.error(f"Error processing {timeframe}: {e}")
-                results['failed'].append({
-                    'timeframe': timeframe,
-                    'reason': str(e)
-                })
-        
-        # 清理未获取的时间周期数据
-        self.cleanup_unused_timeframes(processed_timeframes)
-        
-        # 更新MCP清单
-        self.update_mcp_manifest(processed_timeframes)
-        
-        return results
+                }
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'timeframe': timeframe
+            }
+    
+    def _authorize_new_files(self, fetch_results):
+        """自动授权新文件给MCP服务"""
+        try:
+            from src.mcp_service import load_manifest, save_manifest
+            
+            manifest = load_manifest()
+            current_files = set(manifest.get('files', []))
+            new_files = []
+            
+            # 收集所有新生成的文件路径
+            for success_item in fetch_results.get('success', []):
+                file_paths = success_item.get('file_paths', {})
+                for file_type, file_path in file_paths.items():
+                    if file_path:
+                        # 转换为相对路径
+                        try:
+                            relative_path = str(Path(file_path).relative_to(Path("kline_data")))
+                            if relative_path not in current_files:
+                                new_files.append(relative_path)
+                                current_files.add(relative_path)
+                        except ValueError:
+                            # 如果无法转换为相对路径，跳过
+                            continue
+            
+            if new_files:
+                manifest['files'] = sorted(list(current_files))
+                save_manifest(manifest)
+                logger.info(f"Auto-authorized {len(new_files)} new files for MCP access")
+            
+        except Exception as e:
+            logger.warning(f"Failed to auto-authorize files: {e}")
     
     def _fetch_single_timeframe_data(self, symbol, timeframe, fetch_count, output_count):
         """

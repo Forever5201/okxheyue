@@ -28,7 +28,7 @@ class ToolCall:
     """工具调用请求"""
     name: str
     parameters: Dict[str, Any]
-    call_id: str = None
+    call_id: Optional[str] = None
 
 @dataclass  
 class ToolResult:
@@ -36,7 +36,7 @@ class ToolResult:
     call_id: str
     success: bool
     data: Any = None
-    error_message: str = None
+    error_message: Optional[str] = None
     name: Optional[str] = None
     parameters: Optional[Dict[str, Any]] = None
     latency_ms: Optional[float] = None
@@ -66,7 +66,6 @@ class AIOrchestrator:
         
         # AI配置
         self.ai_config = self.config.get('ai_analysis', {}).get('qwen', {})
-        self.api_key: Optional[str] = None  # 将从环境变量加载
         self.base_url = self.ai_config.get('base_url', 'https://dashscope.aliyuncs.com/compatible-mode/v1')
         self.model = self.ai_config.get('model', 'qwen-plus')
         
@@ -74,7 +73,11 @@ class AIOrchestrator:
         self.mcp_config = self.config.get('mcp_service', {})
         self.mcp_host = self.mcp_config.get('host', 'localhost')
         self.mcp_port = self.mcp_config.get('port', 5000)
-        self.mcp_api_key: Optional[str] = None  # 将从环境变量加载
+        
+        # 立即加载和验证API凭证（修复根本原因#2）
+        self.api_key: Optional[str] = None
+        self.mcp_api_key: Optional[str] = None
+        self._load_and_verify_credentials()
         
         # 分析代理预算与约束配置
         self.agent_config = self.config.get('ai_analysis', {}).get('analysis_agent', {})
@@ -108,7 +111,10 @@ class AIOrchestrator:
             'calculate_risk_metrics': '/calculate_risk_metrics'
         }
         
-        logger.info("AI Orchestrator initialized successfully")
+        # 验证系统就绪状态（修复根本原因#1）
+        self._verify_system_readiness()
+        
+        logger.info("AI Orchestrator initialized successfully with verified credentials")
         
         # 尝试加载 JSON Schema 校验库
         try:
@@ -146,8 +152,8 @@ class AIOrchestrator:
             logger.error(f"Error loading tools definition: {e}")
             return {"tools": []}
     
-    def _load_api_credentials(self):
-        """加载API凭证"""
+    def _load_and_verify_credentials(self):
+        """加载并验证API凭证 - 在初始化时立即执行"""
         import os
         from dotenv import load_dotenv
         
@@ -155,10 +161,43 @@ class AIOrchestrator:
         self.api_key = os.getenv("DASHSCOPE_API_KEY")
         self.mcp_api_key = os.getenv("MCP_API_KEY")
         
+        # 立即验证凭证（修复根本原因#2）
+        missing_keys = []
         if not self.api_key:
-            raise ValueError("DASHSCOPE_API_KEY not found in environment variables")
+            missing_keys.append("DASHSCOPE_API_KEY")
         if not self.mcp_api_key:
-            raise ValueError("MCP_API_KEY not found in environment variables")
+            missing_keys.append("MCP_API_KEY")
+        
+        if missing_keys:
+            error_msg = f"Missing required API keys: {', '.join(missing_keys)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        logger.info("API credentials loaded and verified successfully")
+    
+    def _verify_system_readiness(self):
+        """验证系统组件就绪状态"""
+        # 验证AI分析配置
+        analysis_config = self.config.get('ai_analysis', {}).get('analysis_agent', {})
+        if not analysis_config.get('enabled', True):
+            logger.warning("AI analysis is disabled in configuration")
+            raise ValueError("AI analysis system is disabled")
+        
+        # 验证工具配置
+        if not self.tools_definition.get('tools'):
+            logger.error("No tools definition found")
+            raise ValueError("Tools definition is missing or empty")
+        
+        logger.info("System readiness verification completed")
+    
+    def _load_api_credentials(self):
+        """向后兼容的凭证加载方法"""
+        # 如果已经在初始化时加载，无需重复
+        if self.api_key and self.mcp_api_key:
+            return
+        
+        logger.warning("API credentials not loaded during initialization, loading now...")
+        self._load_and_verify_credentials()
     
     def execute_tool_call(self, tool_call: ToolCall) -> ToolResult:
         """

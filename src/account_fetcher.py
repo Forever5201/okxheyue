@@ -3,8 +3,74 @@ from src.logger import setup_logger
 import json
 import os
 import requests
+import time
+from urllib.parse import urlparse
 
 logger = setup_logger()
+
+# --- Begin: Enhanced network configuration and diagnostics ---
+
+class NetworkDiagnostics:
+    """网络诊断和自动修复工具"""
+    
+    @staticmethod
+    def test_connectivity(host="www.okx.com", port=443, timeout=5):
+        """测试网络连接性"""
+        import socket
+        try:
+            socket.setdefaulttimeout(timeout)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex((host, port))
+            sock.close()
+            return result == 0
+        except Exception:
+            return False
+    
+    @staticmethod
+    def detect_proxy_issues():
+        """检测代理配置问题"""
+        proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
+        issues = []
+        
+        for var in proxy_vars:
+            value = os.environ.get(var)
+            if value:
+                try:
+                    parsed = urlparse(value)
+                    if not parsed.hostname:
+                        issues.append(f"Invalid proxy URL format: {var}={value}")
+                    elif not NetworkDiagnostics.test_connectivity(parsed.hostname, parsed.port or 8080, 3):
+                        issues.append(f"Proxy server unreachable: {var}={value}")
+                except Exception as e:
+                    issues.append(f"Proxy URL parsing failed: {var}={value}, error: {e}")
+        
+        return issues
+    
+    @staticmethod
+    def apply_network_fixes():
+        """应用网络修复策略"""
+        fixes_applied = []
+        
+        # 检测并修复代理问题
+        proxy_issues = NetworkDiagnostics.detect_proxy_issues()
+        if proxy_issues:
+            logger.warning(f"Detected proxy issues: {proxy_issues}")
+            
+            # 临时清除有问题的代理设置
+            proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'proxies', 'PROXIES']
+            for var in proxy_vars:
+                if os.environ.get(var):
+                    old_value = os.environ.pop(var, None)
+                    fixes_applied.append(f"Removed problematic proxy: {var}={old_value}")
+        
+        # 测试基础连接性
+        if not NetworkDiagnostics.test_connectivity():
+            logger.error("Basic connectivity test failed for www.okx.com:443")
+            fixes_applied.append("Basic connectivity check failed")
+        else:
+            fixes_applied.append("Basic connectivity confirmed")
+        
+        return fixes_applied
 
 # --- Begin: Defensive network configuration to prevent proxies type errors ---
 
@@ -51,7 +117,8 @@ def _install_requests_proxies_sanitizer_once():
             kwargs["proxies"] = _coerce_to_requests_proxies(kwargs["proxies"])
         return original_request(self, method, url, **kwargs)
 
-    requests.sessions.Session.request = request_with_sanitized_proxies
+    # 安全地设置属性，避免类型检查问题
+    setattr(requests.sessions.Session, 'request', request_with_sanitized_proxies)
     setattr(requests.sessions.Session, sentinel_attr, True)
 
 
@@ -74,8 +141,85 @@ class AccountFetcher:
             passphrase (str): OKX API口令
             flag (str, optional): 交易模式,'0'为实盘,'1'为模拟盘. Defaults to "0".
         """
+        # 应用网络修复策略
+        try:
+            fixes = NetworkDiagnostics.apply_network_fixes()
+            if fixes:
+                logger.info(f"Applied network fixes: {fixes}")
+        except Exception as e:
+            logger.warning(f"Network diagnostics failed: {e}")
+        
         # 正确初始化OKX账户API客户端
         self.client = Account(api_key, secret_key, passphrase, "0", flag)
+        
+        # 网络重试配置
+        self.max_retries = 3
+        self.retry_delay = 2  # 秒
+        self.timeout = 30  # 秒
+    
+    def _robust_api_call(self, api_method, method_name, *args, **kwargs):
+        """
+        带有重试机制和网络诊断的API调用
+        
+        Args:
+            api_method: 要调用的API方法
+            method_name: 方法名称（用于日志）
+            *args, **kwargs: API方法的参数
+        
+        Returns:
+            API响应数据
+        
+        Raises:
+            Exception: 所有重试失败后抛出异常
+        """
+        last_exception = None
+        
+        for attempt in range(self.max_retries):
+            try:
+                logger.debug(f"Attempting {method_name} (attempt {attempt + 1}/{self.max_retries})")
+                response = api_method(*args, **kwargs)
+                
+                # 成功后记录并返回
+                if attempt > 0:
+                    logger.info(f"{method_name} succeeded on attempt {attempt + 1}")
+                return response
+                
+            except Exception as e:
+                last_exception = e
+                error_msg = str(e)
+                
+                # 分析错误类型
+                if "ProxyError" in error_msg or "getaddrinfo failed" in error_msg:
+                    logger.warning(f"{method_name} attempt {attempt + 1} failed with network error: {error_msg}")
+                    
+                    # 在网络错误时尝试修复
+                    if attempt < self.max_retries - 1:
+                        try:
+                            fixes = NetworkDiagnostics.apply_network_fixes()
+                            if fixes:
+                                logger.info(f"Applied network fixes before retry: {fixes}")
+                        except Exception as fix_error:
+                            logger.warning(f"Network fix attempt failed: {fix_error}")
+                        
+                        # 递增延迟
+                        delay = self.retry_delay * (attempt + 1)
+                        logger.info(f"Waiting {delay} seconds before retry...")
+                        time.sleep(delay)
+                    
+                else:
+                    # 非网络错误，直接抛出
+                    logger.error(f"{method_name} failed with non-network error: {error_msg}")
+                    raise e
+        
+        # 所有重试都失败
+        error_msg = f"{method_name} failed after {self.max_retries} attempts"
+        if last_exception:
+            error_msg += f". Last error: {last_exception}"
+            logger.error(error_msg)
+            raise last_exception
+        else:
+            logger.error(error_msg)
+            raise Exception(error_msg)
 
     def _safe_float(self, value, default=0.0):
         """
@@ -118,7 +262,8 @@ class AccountFetcher:
             dict: 账户详细余额数据
         """
         try:
-            response = self.client.get_balance()
+            # 使用带重试机制的API调用
+            response = self._robust_api_call(self.client.get_balance, "get_balance")
             logger.debug(f"Raw account balance response: {json.dumps(response, indent=2)}")
             
             try:
@@ -175,8 +320,6 @@ class AccountFetcher:
 
         except Exception as e:
             logger.error(f"Error fetching account balance: {e}", exc_info=True)
-            if 'response' in locals():
-                logger.debug(f"Last response before error: {response}")
             return self._get_empty_balance()
 
     def _validate_balance_data(self, data):
@@ -264,7 +407,8 @@ class AccountFetcher:
             list: 持仓数据列表
         """
         try:
-            response = self.client.get_positions()
+            # 使用带重试机制的API调用
+            response = self._robust_api_call(self.client.get_positions, "get_positions")
             logger.debug(f"Raw positions response: {json.dumps(response, indent=2)}")
 
             if not response or "data" not in response:
