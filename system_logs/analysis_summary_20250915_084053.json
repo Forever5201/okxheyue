@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "analysis": {
+    "analysis_plan": "📋 分析计划：\n目标：分析BTC-USD-SWAP的最新市场数据，提供全面的技术分析和交易建议\n需要数据：1h K线数据、市场行情、最新价格\n工具调用：get_kline_data(1h), get_market_ticker, get_latest_price\n分析重点：技术指标(RSI/MACD)、市场情绪、关键价格位\n预期输出：完整技术分析报告+风险评估+操作建议",
+    "analysis_report": null,
+    "risk_assessment": null,
+    "actionable_advice": null,
+    "monitoring_notes": null,
+    "tool_calls": [],
+    "raw": "📋 分析计划：\n目标：分析BTC-USD-SWAP的最新市场数据，提供全面的技术分析和交易建议\n需要数据：1h K线数据、市场行情、最新价格\n工具调用：get_kline_data(1h), get_market_ticker, get_latest_price\n分析重点：技术指标(RSI/MACD)、市场情绪、关键价格位\n预期输出：完整技术分析报告+风险评估+操作建议",
+    "compliance_flags": {
+      "has_analysis_plan": true,
+      "has_analysis_report": false,
+      "has_risk_assessment": false,
+      "has_actionable_advice": false
+    }
+  },
+  "execution_log": [
+    "--- 第1轮对话 ---",
+    "✅ AI分析完成，没有更多工具调用"
+  ],
+  "iterations": 1,
+  "tool_calls_used": 0,
+  "timestamp": "2025-09-15T08:40:53.714036Z",
+  "run_id": "f37c1cb8-1f1f-4c56-bfb3-0019ef8c654a",
+  "token_usage": {
+    "prompt_tokens": 2220,
+    "completion_tokens": 95,
+    "total_tokens": 2315
+  },
+  "prompt_meta": {
+    "length": 2288,
+    "sha256_16": "aa740130aeaff64b"
+  }
+}

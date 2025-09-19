@@ -1,0 +1,81 @@
+{
+  "timestamp": "2025-09-19T07:47:33.052309Z",
+  "fetch_results": {
+    "success": [],
+    "failed": [
+      {
+        "timeframe": "1m",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "5m",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "15m",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "30m",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "1h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "2h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "4h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "6h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "12h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "1d",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "3d",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "1w",
+        "reason": "No data received"
+      }
+    ],
+    "metadata": {
+      "symbol": "BTC-USD-SWAP",
+      "timestamp": "2025-09-19T07:47:33.023854Z",
+      "total_timeframes": 12
+    }
+  },
+  "account_summary": {
+    "balance": {
+      "balance": 0,
+      "available_balance": 0
+    },
+    "positions": [],
+    "timestamp": "2025-09-19T07:47:33.023505Z",
+    "error": "'AccountFetcher' object has no attribute 'get_balance'"
+  },
+  "market_summary": {
+    "symbol": "BTC-USD-SWAP",
+    "market_data": {},
+    "funding_data": {},
+    "timestamp": "2025-09-19T07:47:33.023846Z",
+    "error": "'DataFetcher' object has no attribute 'fetch_ticker'"
+  },
+  "system_status": {
+    "is_running": false,
+    "last_update": null
+  }
+}

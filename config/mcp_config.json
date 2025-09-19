@@ -1,0 +1,103 @@
+{
+  "version": "2.1",
+  "description": "MCP服务器配置 - 支持AI分析思考能力",
+  "updated": "2024-12-19",
+  "servers": [
+    {
+      "name": "Sequential Thinking",
+      "description": "Sequential Thinking - 结构化分析思考工具",
+      "type": "mcp_server",
+      "enabled": true,
+      "capabilities": [
+        "multi_step_analysis",
+        "recursive_thinking",
+        "hypothesis_generation",
+        "solution_verification"
+      ],
+      "config": {
+        "max_thoughts": 20,
+        "allow_revision": true,
+        "enable_branching": true,
+        "context_retention": true
+      }
+    },
+    {
+      "name": "Context7",
+      "description": "Context7 - 代码文档和库信息检索",
+      "type": "mcp_server",
+      "enabled": true,
+      "capabilities": [
+        "library_search",
+        "documentation_retrieval",
+        "code_examples"
+      ],
+      "config": {
+        "max_tokens": 5000,
+        "cache_enabled": true
+      }
+    },
+    {
+      "name": "Testsprite",
+      "description": "Testsprite - 自动化测试生成和执行",
+      "type": "mcp_server",
+      "enabled": true,
+      "capabilities": [
+        "test_generation",
+        "test_execution",
+        "code_analysis",
+        "prd_generation"
+      ],
+      "config": {
+        "test_types": ["frontend", "backend"],
+        "auto_execute": false
+      }
+    },
+    {
+      "name": "Puppeteer",
+      "description": "Puppeteer - 浏览器自动化和UI测试",
+      "type": "mcp_server",
+      "enabled": true,
+      "capabilities": [
+        "browser_automation",
+        "screenshot_capture",
+        "ui_interaction",
+        "javascript_execution"
+      ],
+      "config": {
+        "headless": true,
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        }
+      }
+    }
+  ],
+  "global_config": {
+    "timeout": 30000,
+    "retry_attempts": 3,
+    "error_handling": "graceful",
+    "logging": {
+      "level": "info",
+      "file": "logs/mcp_operations.log"
+    }
+  },
+  "integration": {
+    "ai_orchestrator": {
+      "enabled": true,
+      "auto_discovery": true,
+      "permission_check": true
+    },
+    "tool_classification": {
+      "enabled": true,
+      "dynamic_routing": true
+    }
+  },
+  "thinking_capabilities": {
+    "sequential_analysis": true,
+    "recursive_calls": true,
+    "context_management": true,
+    "multi_layer_reasoning": true,
+    "hypothesis_testing": true,
+    "solution_verification": true
+  }
+}

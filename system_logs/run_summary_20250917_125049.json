@@ -1,0 +1,152 @@
+{
+  "timestamp": "2025-09-17T04:50:49.454838+00:00",
+  "fetch_results": {
+    "success": [
+      {
+        "timeframe": "5m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "5m/5m.csv",
+          "metadata": "5m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "15m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "15m/15m.csv",
+          "metadata": "15m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "30m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "30m/30m.csv",
+          "metadata": "30m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "1m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "1m/1m.csv",
+          "metadata": "1m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "4h",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "4h/4h.csv",
+          "metadata": "4h/metadata.json"
+        },
+        "category": "medium_term"
+      },
+      {
+        "timeframe": "6h",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "6h/6h.csv",
+          "metadata": "6h/metadata.json"
+        },
+        "category": "medium_term"
+      },
+      {
+        "timeframe": "1h",
+        "records_count": 150,
+        "file_paths": {
+          "combined": "1h/1h.csv",
+          "metadata": "1h/metadata.json"
+        },
+        "category": "medium_term"
+      },
+      {
+        "timeframe": "2h",
+        "records_count": 150,
+        "file_paths": {
+          "combined": "2h/2h.csv",
+          "metadata": "2h/metadata.json"
+        },
+        "category": "medium_term"
+      },
+      {
+        "timeframe": "12h",
+        "records_count": 80,
+        "file_paths": {
+          "combined": "12h/12h.csv",
+          "metadata": "12h/metadata.json"
+        },
+        "category": "long_term"
+      },
+      {
+        "timeframe": "1w",
+        "records_count": 50,
+        "file_paths": {
+          "combined": "1w/1w.csv",
+          "metadata": "1w/metadata.json"
+        },
+        "category": "long_term"
+      },
+      {
+        "timeframe": "3d",
+        "records_count": 60,
+        "file_paths": {
+          "combined": "3d/3d.csv",
+          "metadata": "3d/metadata.json"
+        },
+        "category": "long_term"
+      },
+      {
+        "timeframe": "1d",
+        "records_count": 70,
+        "file_paths": {
+          "combined": "1d/1d.csv",
+          "metadata": "1d/metadata.json"
+        },
+        "category": "long_term"
+      }
+    ],
+    "failed": [],
+    "metadata": {
+      "symbol": "BTC-USD-SWAP",
+      "timestamp": "2025-09-17T04:46:09.649837Z",
+      "total_timeframes": 12
+    }
+  },
+  "account_summary": {
+    "error": "Failed to fetch account info"
+  },
+  "market_summary": {
+    "symbol": "BTC-USD-SWAP",
+    "market_data": {
+      "last_price": 116225.5,
+      "best_bid": 116225.5,
+      "best_ask": 116225.6,
+      "24h_high": 117085.8,
+      "24h_low": 114698.5,
+      "24h_volume": 6302341.0,
+      "24h_turnover": 5432.9467,
+      "open_interest": 0.0,
+      "funding_rate": -5.18179545099e-05,
+      "next_funding_time": "1758124800000",
+      "estimated_rate": 0.0,
+      "timestamp": 1758084370295,
+      "time_iso": "2025-09-17T04:46:10Z"
+    },
+    "funding_data": {
+      "funding_rate": -5.18179545099e-05,
+      "next_funding_time": "1758124800000",
+      "estimated_rate": 0.0
+    },
+    "timestamp": "2025-09-17T04:46:10.432584Z"
+  },
+  "system_status": {
+    "is_running": false,
+    "last_update": null
+  }
+}

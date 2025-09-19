@@ -229,12 +229,17 @@ class EnhancedDataManager:
             logger.info(f"Using OKX timeframe format: {timeframe} -> {okx_timeframe}")
             
             # 获取历史K线数据
-            kline_df = self.data_fetcher.fetch_kline_data(
-                instrument_id=symbol,
-                bar=okx_timeframe,
-                is_mark_price=False,
+            kline_result = self.data_fetcher.get_kline_data(
+                symbol=symbol,
+                timeframe=okx_timeframe,
                 limit=fetch_count
             )
+            
+            # 将返回的字典转换为DataFrame
+            if kline_result.get('success') and kline_result.get('data'):
+                kline_df = pd.DataFrame(kline_result['data'])
+            else:
+                kline_df = pd.DataFrame()
             
             if kline_df.empty:
                 return pd.DataFrame()
@@ -401,8 +406,8 @@ class EnhancedDataManager:
         获取账户摘要信息
         """
         try:
-            balance_info = self.account_fetcher.get_balance()
-            positions_info = self.account_fetcher.get_detailed_positions()
+            balance_info = self.account_fetcher.get_account_balance()
+            positions_info = self.account_fetcher.get_positions()
             
             return {
                 'balance': balance_info,
@@ -427,8 +432,9 @@ class EnhancedDataManager:
         
         try:
             # 获取市场数据
-            market_data = self.data_fetcher.fetch_ticker(symbol)
-            funding_data = self.data_fetcher.fetch_funding_rate(symbol)
+            market_data = self.data_fetcher.get_ticker_data(symbol)
+            # funding_data = self.data_fetcher.fetch_funding_rate(symbol)  # 方法不存在，暂时注释
+            funding_data = {}  # 临时设置为空字典
             
             return {
                 'symbol': symbol,

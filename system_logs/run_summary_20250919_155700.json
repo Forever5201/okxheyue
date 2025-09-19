@@ -1,0 +1,174 @@
+{
+  "timestamp": "2025-09-19T07:57:00.466044Z",
+  "fetch_results": {
+    "success": [
+      {
+        "timeframe": "1m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "1m/1m.csv",
+          "metadata": "1m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "5m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "5m/5m.csv",
+          "metadata": "5m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "15m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "15m/15m.csv",
+          "metadata": "15m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "30m",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "30m/30m.csv",
+          "metadata": "30m/metadata.json"
+        },
+        "category": "short_term"
+      },
+      {
+        "timeframe": "1h",
+        "records_count": 150,
+        "file_paths": {
+          "combined": "1h/1h.csv",
+          "metadata": "1h/metadata.json"
+        },
+        "category": "medium_term"
+      },
+      {
+        "timeframe": "2h",
+        "records_count": 150,
+        "file_paths": {
+          "combined": "2h/2h.csv",
+          "metadata": "2h/metadata.json"
+        },
+        "category": "medium_term"
+      },
+      {
+        "timeframe": "4h",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "4h/4h.csv",
+          "metadata": "4h/metadata.json"
+        },
+        "category": "medium_term"
+      },
+      {
+        "timeframe": "6h",
+        "records_count": 100,
+        "file_paths": {
+          "combined": "6h/6h.csv",
+          "metadata": "6h/metadata.json"
+        },
+        "category": "medium_term"
+      },
+      {
+        "timeframe": "12h",
+        "records_count": 80,
+        "file_paths": {
+          "combined": "12h/12h.csv",
+          "metadata": "12h/metadata.json"
+        },
+        "category": "long_term"
+      },
+      {
+        "timeframe": "1d",
+        "records_count": 70,
+        "file_paths": {
+          "combined": "1d/1d.csv",
+          "metadata": "1d/metadata.json"
+        },
+        "category": "long_term"
+      },
+      {
+        "timeframe": "3d",
+        "records_count": 60,
+        "file_paths": {
+          "combined": "3d/3d.csv",
+          "metadata": "3d/metadata.json"
+        },
+        "category": "long_term"
+      },
+      {
+        "timeframe": "1w",
+        "records_count": 50,
+        "file_paths": {
+          "combined": "1w/1w.csv",
+          "metadata": "1w/metadata.json"
+        },
+        "category": "long_term"
+      }
+    ],
+    "failed": [],
+    "metadata": {
+      "symbol": "BTC-USD-SWAP",
+      "timestamp": "2025-09-19T07:57:00.293588Z",
+      "total_timeframes": 12
+    }
+  },
+  "account_summary": {
+    "balance": {
+      "success": true,
+      "data": {
+        "total_equity": "10000.00",
+        "available_balance": "8500.00",
+        "frozen_balance": "1500.00",
+        "currency": "USDT",
+        "timestamp": "2025-09-19T07:57:00.293462"
+      },
+      "timestamp": "2025-09-19T07:57:00.293501"
+    },
+    "positions": {
+      "success": true,
+      "data": [
+        {
+          "instrument": "BTC-USD-SWAP",
+          "position_side": "long",
+          "size": "0.1",
+          "avg_price": "45000.00",
+          "unrealized_pnl": "500.00",
+          "margin": "1000.00"
+        }
+      ],
+      "timestamp": "2025-09-19T07:57:00.293539"
+    },
+    "timestamp": "2025-09-19T07:57:00.293541Z"
+  },
+  "market_summary": {
+    "symbol": "BTC-USD-SWAP",
+    "market_data": {
+      "success": true,
+      "data": {
+        "symbol": "BTC-USD-SWAP",
+        "last_price": "45123.45",
+        "bid_price": "45120.00",
+        "ask_price": "45125.00",
+        "high_24h": "46000.00",
+        "low_24h": "44000.00",
+        "volume_24h": "12345.67",
+        "change_24h": "2.34",
+        "change_percent_24h": "5.45",
+        "timestamp": "2025-09-19T07:57:00.293545"
+      },
+      "timestamp": "2025-09-19T07:57:00.293581"
+    },
+    "funding_data": {},
+    "timestamp": "2025-09-19T07:57:00.293583Z"
+  },
+  "system_status": {
+    "is_running": false,
+    "last_update": null
+  }
+}

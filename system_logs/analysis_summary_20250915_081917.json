@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "analysis": {
+    "analysis_plan": "📋 分析计划：\n目标：分析BTC-USD-SWAP的1小时级别技术指标\n需要数据：1h K线数据、技术指标、市场情绪\n工具调用：get_kline_data, get_market_ticker\n分析重点：RSI超买超卖、MACD信号、布林带位置\n预期输出：技术信号评估 + 风险等级 + 操作建议\n```",
+    "analysis_report": null,
+    "risk_assessment": null,
+    "actionable_advice": null,
+    "monitoring_notes": null,
+    "tool_calls": [],
+    "raw": "```\n📋 分析计划：\n目标：分析BTC-USD-SWAP的1小时级别技术指标\n需要数据：1h K线数据、技术指标、市场情绪\n工具调用：get_kline_data, get_market_ticker\n分析重点：RSI超买超卖、MACD信号、布林带位置\n预期输出：技术信号评估 + 风险等级 + 操作建议\n```",
+    "compliance_flags": {
+      "has_analysis_plan": true,
+      "has_analysis_report": false,
+      "has_risk_assessment": false,
+      "has_actionable_advice": false
+    }
+  },
+  "execution_log": [
+    "--- 第1轮对话 ---",
+    "✅ AI分析完成，没有更多工具调用"
+  ],
+  "iterations": 1,
+  "tool_calls_used": 0,
+  "timestamp": "2025-09-15T08:19:17.994432Z",
+  "run_id": "8f0ff1ac-edd0-48c8-b9ba-094d4e1e4e9e",
+  "token_usage": {
+    "prompt_tokens": 2226,
+    "completion_tokens": 89,
+    "total_tokens": 2315
+  },
+  "prompt_meta": {
+    "length": 2288,
+    "sha256_16": "aa740130aeaff64b"
+  }
+}

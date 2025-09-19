@@ -1,0 +1,114 @@
+{
+  "timestamp": "2025-09-19T07:52:57.960800Z",
+  "fetch_results": {
+    "success": [],
+    "failed": [
+      {
+        "timeframe": "1m",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "5m",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "15m",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "30m",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "1h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "2h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "4h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "6h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "12h",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "1d",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "3d",
+        "reason": "No data received"
+      },
+      {
+        "timeframe": "1w",
+        "reason": "No data received"
+      }
+    ],
+    "metadata": {
+      "symbol": "BTC-USD-SWAP",
+      "timestamp": "2025-09-19T07:52:57.954475Z",
+      "total_timeframes": 12
+    }
+  },
+  "account_summary": {
+    "balance": {
+      "success": true,
+      "data": {
+        "total_equity": "10000.00",
+        "available_balance": "8500.00",
+        "frozen_balance": "1500.00",
+        "currency": "USDT",
+        "timestamp": "2025-09-19T07:52:57.954349"
+      },
+      "timestamp": "2025-09-19T07:52:57.954388"
+    },
+    "positions": {
+      "success": true,
+      "data": [
+        {
+          "instrument": "BTC-USD-SWAP",
+          "position_side": "long",
+          "size": "0.1",
+          "avg_price": "45000.00",
+          "unrealized_pnl": "500.00",
+          "margin": "1000.00"
+        }
+      ],
+      "timestamp": "2025-09-19T07:52:57.954425"
+    },
+    "timestamp": "2025-09-19T07:52:57.954427Z"
+  },
+  "market_summary": {
+    "symbol": "BTC-USD-SWAP",
+    "market_data": {
+      "success": true,
+      "data": {
+        "symbol": "BTC-USD-SWAP",
+        "last_price": "45123.45",
+        "bid_price": "45120.00",
+        "ask_price": "45125.00",
+        "high_24h": "46000.00",
+        "low_24h": "44000.00",
+        "volume_24h": "12345.67",
+        "change_24h": "2.34",
+        "change_percent_24h": "5.45",
+        "timestamp": "2025-09-19T07:52:57.954431"
+      },
+      "timestamp": "2025-09-19T07:52:57.954468"
+    },
+    "funding_data": {},
+    "timestamp": "2025-09-19T07:52:57.954470Z"
+  },
+  "system_status": {
+    "is_running": false,
+    "last_update": null
+  }
+}

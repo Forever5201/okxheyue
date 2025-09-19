@@ -1,0 +1,249 @@
+{
+  "tool_classification_system": {
+    "version": "2.1",
+    "description": "AI交易系统工具分类配置",
+    "last_updated": "2024-01-20",
+    
+    "tool_categories": {
+      "simple_tools": {
+        "description": "基础数据获取和简单计算工具",
+        "permission_level": "basic",
+        "allowed_sessions": ["main_session", "sub_session"],
+        "tools": {
+          "get_kline_data": {
+            "description": "获取K线数据",
+            "complexity": "low",
+            "execution_time": "fast",
+            "dependencies": ["data_manager"],
+            "parameters": ["symbol", "timeframe", "limit"],
+            "return_type": "structured_data"
+          },
+          "get_market_ticker": {
+            "description": "获取市场行情数据",
+            "complexity": "low", 
+            "execution_time": "fast",
+            "dependencies": ["data_manager"],
+            "parameters": [],
+            "return_type": "structured_data"
+          },
+          "get_latest_price": {
+            "description": "获取最新价格",
+            "complexity": "low",
+            "execution_time": "fast", 
+            "dependencies": ["data_manager"],
+            "parameters": ["symbol"],
+            "return_type": "numeric"
+          },
+          "calculate_technical_indicators": {
+            "description": "计算技术指标",
+            "complexity": "medium",
+            "execution_time": "medium",
+            "dependencies": ["technical_indicator"],
+            "parameters": ["data", "indicator_type", "params"],
+            "return_type": "structured_data"
+          },
+          "get_account_balance": {
+            "description": "获取账户余额",
+            "complexity": "low",
+            "execution_time": "fast",
+            "dependencies": ["account_fetcher"],
+            "parameters": [],
+            "return_type": "structured_data"
+          },
+          "get_position_info": {
+            "description": "获取持仓信息",
+            "complexity": "low",
+            "execution_time": "fast",
+            "dependencies": ["account_fetcher"],
+            "parameters": ["symbol"],
+            "return_type": "structured_data"
+          }
+        }
+      },
+      
+      "meta_tools": {
+        "description": "任务分解和高级编排工具",
+        "permission_level": "advanced",
+        "allowed_sessions": ["main_session"],
+        "tools": {
+          "decompose_and_execute_task": {
+            "description": "分解复杂任务并执行",
+            "complexity": "high",
+            "execution_time": "variable",
+            "dependencies": ["ai_orchestrator", "task_planner"],
+            "parameters": ["task_description", "context"],
+            "return_type": "execution_result",
+            "recursive_capability": true
+          },
+          "analyze_complex_scenario": {
+            "description": "复杂场景分析",
+            "complexity": "high",
+            "execution_time": "slow",
+            "dependencies": ["ai_orchestrator", "analysis_engine"],
+            "parameters": ["scenario_data", "analysis_type"],
+            "return_type": "analysis_report"
+          },
+          "coordinate_multi_step_analysis": {
+            "description": "协调多步骤分析流程",
+            "complexity": "high",
+            "execution_time": "variable",
+            "dependencies": ["ai_orchestrator", "workflow_manager"],
+            "parameters": ["analysis_plan", "data_sources"],
+            "return_type": "coordinated_result"
+          },
+          "generate_trading_strategy": {
+            "description": "生成交易策略",
+            "complexity": "very_high",
+            "execution_time": "slow",
+            "dependencies": ["strategy_generator", "risk_manager"],
+            "parameters": ["market_data", "risk_parameters", "objectives"],
+            "return_type": "strategy_plan"
+          }
+        }
+      },
+      
+      "thinking_tools": {
+        "description": "思维和推理工具",
+        "permission_level": "cognitive",
+        "allowed_sessions": ["main_session", "sub_session"],
+        "tools": {
+          "sequentialthinking": {
+            "description": "结构化思维推理工具",
+            "complexity": "variable",
+            "execution_time": "variable",
+            "dependencies": ["mcp_client"],
+            "parameters": ["thought", "thought_number", "total_thoughts", "next_thought_needed"],
+            "return_type": "thinking_result",
+            "cognitive_capability": true
+          },
+          "risk_assessment_thinking": {
+            "description": "风险评估思维工具",
+            "complexity": "medium",
+            "execution_time": "medium",
+            "dependencies": ["risk_analyzer"],
+            "parameters": ["scenario", "risk_factors"],
+            "return_type": "risk_analysis"
+          },
+          "pattern_recognition": {
+            "description": "模式识别工具",
+            "complexity": "medium",
+            "execution_time": "medium",
+            "dependencies": ["pattern_analyzer"],
+            "parameters": ["data_series", "pattern_type"],
+            "return_type": "pattern_result"
+          }
+        }
+      }
+    },
+    
+    "session_configurations": {
+      "main_session": {
+        "name": "指挥官模式",
+        "description": "具有完整权限的主会话，可以使用所有工具类别",
+        "allowed_tool_categories": ["simple_tools", "meta_tools", "thinking_tools"],
+        "max_recursion_depth": 5,
+        "can_create_sub_sessions": true,
+        "decision_authority": "full"
+      },
+      "sub_session": {
+        "name": "分析师模式", 
+        "description": "受限权限的子会话，专注于数据分析和思维推理",
+        "allowed_tool_categories": ["simple_tools", "thinking_tools"],
+        "max_recursion_depth": 2,
+        "can_create_sub_sessions": false,
+        "decision_authority": "limited"
+      }
+    },
+    
+    "permission_matrix": {
+      "simple_tools": {
+        "main_session": "full_access",
+        "sub_session": "full_access"
+      },
+      "meta_tools": {
+        "main_session": "full_access",
+        "sub_session": "no_access"
+      },
+      "thinking_tools": {
+        "main_session": "full_access", 
+        "sub_session": "full_access"
+      }
+    },
+    
+    "execution_rules": {
+      "task_complexity_thresholds": {
+        "simple": {
+          "max_tools": 3,
+          "max_execution_time": 30,
+          "preferred_session": "sub_session"
+        },
+        "medium": {
+          "max_tools": 8,
+          "max_execution_time": 120,
+          "preferred_session": "sub_session"
+        },
+        "complex": {
+          "max_tools": 20,
+          "max_execution_time": 600,
+          "preferred_session": "main_session"
+        }
+      },
+      
+      "safety_constraints": {
+        "max_concurrent_tools": 5,
+        "timeout_seconds": 300,
+        "retry_attempts": 3,
+        "error_escalation": true
+      },
+      
+      "resource_limits": {
+        "memory_limit_mb": 512,
+        "cpu_time_limit_seconds": 60,
+        "network_timeout_seconds": 30
+      }
+    },
+    
+    "tool_dependencies": {
+      "dependency_graph": {
+        "data_manager": ["config_loader", "logger"],
+        "account_fetcher": ["data_manager", "api_client"],
+        "technical_indicator": ["data_manager"],
+        "ai_orchestrator": ["data_manager", "mcp_client"],
+        "task_planner": ["ai_orchestrator"],
+        "analysis_engine": ["data_manager", "technical_indicator"],
+        "workflow_manager": ["ai_orchestrator", "task_planner"],
+        "strategy_generator": ["analysis_engine", "risk_manager"],
+        "risk_manager": ["data_manager", "account_fetcher"],
+        "mcp_client": ["config_loader"],
+        "risk_analyzer": ["data_manager", "technical_indicator"],
+        "pattern_analyzer": ["data_manager", "technical_indicator"]
+      },
+      
+      "initialization_order": [
+        "config_loader",
+        "logger", 
+        "data_manager",
+        "api_client",
+        "account_fetcher",
+        "technical_indicator",
+        "mcp_client",
+        "ai_orchestrator",
+        "task_planner",
+        "analysis_engine",
+        "workflow_manager",
+        "risk_manager",
+        "strategy_generator",
+        "risk_analyzer",
+        "pattern_analyzer"
+      ]
+    },
+    
+    "monitoring_and_logging": {
+      "tool_usage_tracking": true,
+      "performance_metrics": true,
+      "error_logging": true,
+      "session_audit_trail": true,
+      "permission_violation_alerts": true
+    }
+  }
+}

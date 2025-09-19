@@ -1,0 +1,161 @@
+{
+  "version": "2.1",
+  "description": "AI交易系统工具分类配置 - 向后兼容版本",
+  "last_updated": "2024-01-20",
+  
+  "categories": {
+    "simple_tools": {
+      "description": "基础数据获取和简单计算工具",
+      "permission_level": "basic",
+      "allowed_sessions": ["main_session", "sub_session"]
+    },
+    "complex_tools": {
+      "description": "复杂分析和策略工具",
+      "permission_level": "advanced",
+      "allowed_sessions": ["main_session"]
+    },
+    "system_tools": {
+      "description": "系统管理和配置工具",
+      "permission_level": "admin",
+      "allowed_sessions": ["main_session"]
+    }
+  },
+  
+  "tools": {
+    "get_kline_data": {
+      "category": "simple_tools",
+      "description": "获取K线数据",
+      "complexity": "low",
+      "execution_time": "fast",
+      "dependencies": ["data_manager"],
+      "parameters": ["symbol", "timeframe", "limit"],
+      "return_type": "structured_data"
+    },
+    "get_market_ticker": {
+      "category": "simple_tools",
+      "description": "获取市场行情数据",
+      "complexity": "low",
+      "execution_time": "fast",
+      "dependencies": ["data_manager"],
+      "parameters": [],
+      "return_type": "structured_data"
+    },
+    "get_latest_price": {
+      "category": "simple_tools",
+      "description": "获取最新价格",
+      "complexity": "low",
+      "execution_time": "fast",
+      "dependencies": ["data_manager"],
+      "parameters": ["symbol"],
+      "return_type": "numeric"
+    },
+    "calculate_technical_indicators": {
+      "category": "simple_tools",
+      "description": "计算技术指标",
+      "complexity": "medium",
+      "execution_time": "medium",
+      "dependencies": ["technical_indicator"],
+      "parameters": ["data", "indicator_type", "params"],
+      "return_type": "structured_data"
+    },
+    "get_account_balance": {
+      "category": "simple_tools",
+      "description": "获取账户余额",
+      "complexity": "low",
+      "execution_time": "fast",
+      "dependencies": ["account_fetcher"],
+      "parameters": [],
+      "return_type": "structured_data"
+    },
+    "analyze_market_trend": {
+      "category": "complex_tools",
+      "description": "分析市场趋势",
+      "complexity": "high",
+      "execution_time": "slow",
+      "dependencies": ["analysis_tools"],
+      "parameters": ["symbol", "timeframe", "analysis_type"],
+      "return_type": "analysis_result"
+    },
+    "generate_trading_strategy": {
+      "category": "complex_tools",
+      "description": "生成交易策略",
+      "complexity": "high",
+      "execution_time": "slow",
+      "dependencies": ["strategy_generator"],
+      "parameters": ["market_data", "risk_level", "strategy_type"],
+      "return_type": "strategy_result"
+    },
+    "execute_trade": {
+      "category": "complex_tools",
+      "description": "执行交易",
+      "complexity": "high",
+      "execution_time": "medium",
+      "dependencies": ["trade_executor"],
+      "parameters": ["symbol", "side", "amount", "price"],
+      "return_type": "trade_result"
+    },
+    "manage_risk": {
+      "category": "complex_tools",
+      "description": "风险管理",
+      "complexity": "high",
+      "execution_time": "medium",
+      "dependencies": ["risk_manager"],
+      "parameters": ["portfolio", "risk_params"],
+      "return_type": "risk_assessment"
+    },
+    "sequential_thinking": {
+      "category": "system_tools",
+      "description": "顺序思考工具",
+      "complexity": "high",
+      "execution_time": "variable",
+      "dependencies": ["mcp_sequential_thinking"],
+      "parameters": ["thought", "thought_number", "total_thoughts"],
+      "return_type": "thinking_result"
+    },
+    "context7_docs": {
+      "category": "system_tools",
+      "description": "Context7文档查询",
+      "complexity": "medium",
+      "execution_time": "medium",
+      "dependencies": ["mcp_context7"],
+      "parameters": ["library_id", "topic"],
+      "return_type": "documentation"
+    },
+    "testsprite_testing": {
+      "category": "system_tools",
+      "description": "Testsprite测试工具",
+      "complexity": "high",
+      "execution_time": "slow",
+      "dependencies": ["mcp_testsprite"],
+      "parameters": ["project_path", "test_type"],
+      "return_type": "test_result"
+    },
+    "puppeteer_automation": {
+      "category": "system_tools",
+      "description": "Puppeteer自动化工具",
+      "complexity": "high",
+      "execution_time": "variable",
+      "dependencies": ["mcp_puppeteer"],
+      "parameters": ["action", "target", "options"],
+      "return_type": "automation_result"
+    }
+  },
+  
+  "permission_matrix": {
+    "main_session": {
+      "allowed_categories": ["simple_tools", "complex_tools", "system_tools"],
+      "allowed_tools": "all",
+      "restrictions": []
+    },
+    "sub_session": {
+      "allowed_categories": ["simple_tools"],
+      "allowed_tools": ["get_kline_data", "get_market_ticker", "get_latest_price", "calculate_technical_indicators"],
+      "restrictions": ["no_trading", "no_system_access"]
+    },
+    "thinking_session": {
+      "allowed_categories": ["system_tools"],
+      "allowed_tools": ["sequential_thinking", "context7_docs"],
+      "restrictions": ["no_trading", "no_data_modification"]
+    }
+  }
+}

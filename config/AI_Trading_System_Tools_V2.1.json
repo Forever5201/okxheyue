@@ -1,0 +1,362 @@
+{
+  "name": "ai_trading_system_tools_v2.1",
+  "version": "2.1",
+  "description": "AI交易系统分析师的工具授权清单 V2.1 - 支持递归式指挥官-执行官模式的三类工具分类",
+  "tool_categories": {
+    "simple_tools": {
+      "description": "简单工具 - 用于执行原子性操作，在所有会话类型中都可使用",
+      "usage_context": ["top_level_session", "sub_session"]
+    },
+    "meta_tools": {
+      "description": "元工具 - 用于任务分解和子会话管理，仅在顶层会话中使用",
+      "usage_context": ["top_level_session"]
+    },
+    "thinking_tools": {
+      "description": "思维工具 - 用于构建结构化思维链，主要在子会话中使用",
+      "usage_context": ["top_level_session", "sub_session"]
+    }
+  },
+  "tools": [
+    {
+      "name": "get_kline_data",
+      "category": "simple_tools",
+      "description": "获取指定时间周期的K线数据和技术指标",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "timeframe": {
+            "type": "string",
+            "enum": ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d", "3d", "1w"],
+            "description": "时间周期，如：1m(1分钟)，1h(1小时)，1d(1天)"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 100,
+            "minimum": 1,
+            "maximum": 300,
+            "description": "获取的K线数量，默认100，最多300"
+          }
+        },
+        "required": ["timeframe"]
+      },
+      "returns": {
+        "type": "object",
+        "description": "包含OHLCV数据和技术指标的完整K线数据",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "K线数据数组，每个元素包含时间戳、开高低收价格、成交量和技术指标"
+          },
+          "indicators": {
+            "type": "object",
+            "description": "技术指标数据，包括RSI、MACD、布林带、ATR等"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "数据元信息，包括时间周期、数据来源、更新时间等"
+          }
+        }
+      },
+      "usage_notes": [
+        "这是最常用的数据获取工具，用于获取市场的基础技术分析数据",
+        "技术指标已经预计算，包括RSI、MACD、布林带、ATR、随机指标等",
+        "数据包含资金费率信息，对于永续合约分析很重要",
+        "建议优先使用1h、4h时间周期进行中期分析"
+      ]
+    },
+    {
+      "name": "get_market_ticker",
+      "category": "simple_tools",
+      "description": "获取市场行情数据和24小时统计信息",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "交易对符号，如BTC-USD-SWAP",
+            "default": "BTC-USD-SWAP"
+          }
+        }
+      },
+      "returns": {
+        "type": "object",
+        "description": "市场行情和统计数据",
+        "properties": {
+          "status": {"type": "string"},
+          "data": {
+            "type": "object",
+            "description": "包含价格、成交量、涨跌幅等市场数据"
+          }
+        }
+      },
+      "usage_notes": [
+        "用于快速获取当前市场概况",
+        "包含24小时价格变化和成交量信息",
+        "适合作为分析的起始点"
+      ]
+    },
+    {
+      "name": "get_latest_price",
+      "category": "simple_tools",
+      "description": "获取指定交易对的最新价格",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "交易对符号，如BTC-USD-SWAP",
+            "default": "BTC-USD-SWAP"
+          }
+        }
+      },
+      "returns": {
+        "type": "object",
+        "description": "最新价格信息",
+        "properties": {
+          "status": {"type": "string"},
+          "data": {
+            "type": "object",
+            "description": "包含最新价格和时间戳"
+          }
+        }
+      },
+      "usage_notes": [
+        "用于获取实时价格信息",
+        "适合在分析过程中确认当前价位"
+      ]
+    },
+    {
+      "name": "get_account_balance",
+      "category": "simple_tools",
+      "description": "获取账户余额信息",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returns": {
+        "type": "object",
+        "description": "账户余额和资产信息"
+      },
+      "usage_notes": [
+        "用于了解当前账户资金状况",
+        "风险管理和仓位计算的基础数据"
+      ]
+    },
+    {
+      "name": "get_positions",
+      "category": "simple_tools",
+      "description": "获取当前持仓信息",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returns": {
+        "type": "object",
+        "description": "当前所有持仓的详细信息"
+      },
+      "usage_notes": [
+        "用于了解当前持仓状况",
+        "仓位调整和风险评估的重要依据"
+      ]
+    },
+    {
+      "name": "calculate_risk_metrics",
+      "category": "simple_tools",
+      "description": "计算风险指标和评估",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returns": {
+        "type": "object",
+        "description": "风险指标计算结果"
+      },
+      "usage_notes": [
+        "用于量化风险评估",
+        "提供科学的风险管理建议"
+      ]
+    },
+    {
+      "name": "decompose_and_execute_task",
+      "category": "meta_tools",
+      "description": "分解复杂任务并创建子会话执行 - 仅在顶层会话中使用",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "goal": {
+            "type": "string",
+            "description": "要委派给子会话的具体分析目标"
+          },
+          "context": {
+            "type": "string",
+            "description": "任务背景和相关信息",
+            "default": ""
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "description": "任务优先级",
+            "default": "medium"
+          }
+        },
+        "required": ["goal"]
+      },
+      "returns": {
+        "type": "object",
+        "description": "子会话执行结果",
+        "properties": {
+          "status": {"type": "string"},
+          "result": {
+            "type": "string",
+            "description": "子会话的分析结果和结论"
+          },
+          "session_id": {
+            "type": "string",
+            "description": "子会话标识符"
+          }
+        }
+      },
+      "usage_notes": [
+        "用于处理复杂的多维度分析任务",
+        "将复杂任务分解为专门的子任务",
+        "子会话将使用分析师模式和sequentialthinking工具",
+        "仅在指挥官模式（顶层会话）中可用"
+      ]
+    },
+    {
+      "name": "sequentialthinking",
+      "category": "thinking_tools",
+      "description": "构建和管理结构化思维链 - 主要在子会话中使用",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "thought": {
+            "type": "string",
+            "description": "当前思考步骤的内容"
+          },
+          "nextThoughtNeeded": {
+            "type": "boolean",
+            "description": "是否需要下一个思考步骤"
+          },
+          "thoughtNumber": {
+            "type": "integer",
+            "description": "当前思考步骤编号",
+            "minimum": 1
+          },
+          "totalThoughts": {
+            "type": "integer",
+            "description": "预估总思考步骤数",
+            "minimum": 1
+          },
+          "isRevision": {
+            "type": "boolean",
+            "description": "是否修正之前的思考",
+            "default": false
+          },
+          "revisesThought": {
+            "type": "integer",
+            "description": "修正哪个思考步骤",
+            "minimum": 1
+          },
+          "branchFromThought": {
+            "type": "integer",
+            "description": "从哪个步骤开始分支",
+            "minimum": 1
+          },
+          "branchId": {
+            "type": "string",
+            "description": "分支标识符"
+          },
+          "needsMoreThoughts": {
+            "type": "boolean",
+            "description": "是否需要更多思考步骤",
+            "default": false
+          }
+        },
+        "required": ["thought", "nextThoughtNeeded", "thoughtNumber", "totalThoughts"]
+      },
+      "returns": {
+        "type": "object",
+        "description": "思维链状态和管理信息",
+        "properties": {
+          "thoughtNumber": {"type": "integer"},
+          "totalThoughts": {"type": "integer"},
+          "nextThoughtNeeded": {"type": "boolean"},
+          "branches": {"type": "array"},
+          "thoughtHistoryLength": {"type": "integer"}
+        }
+      },
+      "usage_notes": [
+        "在分析师模式下必须使用的核心工具",
+        "用于构建透明、可追踪的思维过程",
+        "支持思维修正和分支探索",
+        "每个分析步骤都要通过此工具记录",
+        "确保分析过程的完整性和可审查性"
+      ]
+    }
+  ],
+  "session_tool_mapping": {
+    "top_level_session": {
+      "description": "顶层会话（指挥官模式）可用工具",
+      "available_tools": [
+        "get_kline_data",
+        "get_market_ticker",
+        "get_latest_price",
+        "get_account_balance",
+        "get_positions",
+        "calculate_risk_metrics",
+        "decompose_and_execute_task",
+        "sequentialthinking"
+      ]
+    },
+    "sub_session": {
+      "description": "子会话（分析师模式）可用工具",
+      "available_tools": [
+        "get_kline_data",
+        "get_market_ticker",
+        "get_latest_price",
+        "get_account_balance",
+        "get_positions",
+        "calculate_risk_metrics",
+        "sequentialthinking"
+      ]
+    }
+  },
+  "usage_guidelines": {
+    "task_complexity_detection": {
+      "complex_task_indicators": [
+        "包含'和'、'以及'、'同时'等连接词",
+        "需要多个时间维度的分析",
+        "要求综合多种分析方法",
+        "涉及策略制定和风险管理",
+        "需要多步骤的逻辑推理"
+      ],
+      "simple_task_indicators": [
+        "单一明确的分析目标",
+        "特定时间周期或指标",
+        "直接的数据查询和分析",
+        "明确定义的技术分析任务"
+      ]
+    },
+    "workflow_patterns": {
+      "commander_mode": {
+        "steps": [
+          "识别复杂任务",
+          "制定主计划",
+          "调用decompose_and_execute_task委派子任务",
+          "整合子任务结果",
+          "形成综合分析报告"
+        ]
+      },
+      "analyst_mode": {
+        "steps": [
+          "立即调用sequentialthinking启动思维链",
+          "进入思考-行动循环",
+          "根据需要调用简单工具获取数据",
+          "动态调整思维路径",
+          "通过最终思维步骤总结结论"
+        ]
+      }
+    }
+  }
+}

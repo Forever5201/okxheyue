@@ -1,0 +1,60 @@
+{
+  "success": true,
+  "analysis": {
+    "analysis_plan": null,
+    "analysis_report": null,
+    "risk_assessment": null,
+    "actionable_advice": null,
+    "monitoring_notes": null,
+    "tool_calls": [
+      {
+        "name": "get_latest_price",
+        "parameters": {
+          "symbol": "BTC-USD-SWAP"
+        },
+        "success": false,
+        "latency_ms": null,
+        "status_code": null,
+        "call_id": "call_386dc19250204e378e8dfa"
+      },
+      {
+        "name": "get_market_ticker",
+        "parameters": {
+          "symbol": "BTC-USD-SWAP"
+        },
+        "success": false,
+        "latency_ms": null,
+        "status_code": null,
+        "call_id": "call_61841c44c5e34cecba792b"
+      }
+    ],
+    "raw": "当前遇到网络错误，无法获取实时市场数据。建议稍后重试或检查网络连接。\n```\n",
+    "compliance_flags": {
+      "has_analysis_plan": false,
+      "has_analysis_report": false,
+      "has_risk_assessment": false,
+      "has_actionable_advice": false
+    }
+  },
+  "execution_log": [
+    "--- 第1轮对话 ---",
+    "❌ 工具调用失败: get_latest_price - MCP服务调用失败: 502 Server Error: Bad Gateway for url: http://0.0.0.0:5000/get_latest_price?symbol=BTC-USD-SWAP",
+    "--- 第2轮对话 ---",
+    "❌ 工具调用失败: get_market_ticker - MCP服务调用失败: 502 Server Error: Bad Gateway for url: http://0.0.0.0:5000/get_market_ticker?symbol=BTC-USD-SWAP",
+    "--- 第3轮对话 ---",
+    "✅ AI分析完成，没有更多工具调用"
+  ],
+  "iterations": 3,
+  "tool_calls_used": 2,
+  "timestamp": "2025-09-17T08:21:20.416023Z",
+  "run_id": "eb695dca-98b4-41e5-90c3-f168f0ac9a49",
+  "token_usage": {
+    "prompt_tokens": 7243,
+    "completion_tokens": 204,
+    "total_tokens": 7447
+  },
+  "prompt_meta": {
+    "length": 2288,
+    "sha256_16": "aa740130aeaff64b"
+  }
+}

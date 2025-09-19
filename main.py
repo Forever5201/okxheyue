@@ -19,6 +19,8 @@ from typing import Dict, Any
 from src.logger import setup_logger
 from src.enhanced_data_manager import EnhancedDataManager
 from src.mcp_service import app as mcp_app
+from src.logger import setup_logger
+from src.enhanced_data_manager import EnhancedDataManager
 from src.ai_orchestrator import AIOrchestrator
 
 logger = setup_logger()
@@ -30,13 +32,20 @@ class AITradingSystem:
         load_dotenv()
         
         # 检查必要的环境变量
-        required_vars = ['OKX_API_KEY', 'OKX_API_SECRET', 'OKX_API_PASSPHRASE', 'MCP_API_KEY', 'DASHSCOPE_API_KEY']
+        required_vars = ['OKX_API_KEY', 'OKX_API_SECRET', 'OKX_API_PASSPHRASE', 'DASHSCOPE_API_KEY']
         missing_vars = [var for var in required_vars if not os.getenv(var)]
         
         if missing_vars:
             error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
             logger.error(error_msg)
             raise ValueError(error_msg)
+
+        # 检查MCP服务密钥
+        if os.getenv('MCP_API_KEY') and os.getenv('MCP_API_KEY') != 'your_mcp_api_key_here':
+            self.mcp_enabled = True
+        else:
+            self.mcp_enabled = False
+            logger.warning("MCP_API_KEY not found or is a placeholder. MCP service will be disabled.")
         
         # 初始化数据管理器
         try:
@@ -59,16 +68,21 @@ class AITradingSystem:
             # 获取配置
             config = self.data_manager.config
             
-            # 检查AI分析系统是否启用
+            # 检查AI分析系统是否启用 (修正了配置读取逻辑)
             ai_analysis_config = config.get('ai_analysis', {})
-            if not ai_analysis_config.get('enabled', True):
-                logger.info("AI analysis system is disabled in configuration")
+            analysis_agent_config = ai_analysis_config.get('analysis_agent', {})
+            if not analysis_agent_config.get('enabled', False):
+                logger.info("AI analysis agent is disabled in configuration (ai_analysis.analysis_agent.enabled is not true)")
                 self.ai_orchestrator = None
                 return
             
             # 初始化AI编排器（按照设计文档的项目经理模式）
             try:
-                self.ai_orchestrator = AIOrchestrator()
+                # 注入data_manager和mcp_enabled状态
+                self.ai_orchestrator = AIOrchestrator(
+                    data_manager=self.data_manager, 
+                    mcp_enabled=self.mcp_enabled
+                )
                 logger.info("AI Orchestrator initialized successfully")
             except Exception as e:
                 logger.error(f"Failed to initialize AI Orchestrator: {e}")
@@ -194,6 +208,7 @@ class AITradingSystem:
     
     def _trigger_analysis_if_enabled(self, data_results: Dict[str, Any]):
         """如果AI分析系统启用，触发分析请求"""
+        logger.info("Entering _trigger_analysis_if_enabled to check for AI analysis")
         if not hasattr(self, 'ai_orchestrator') or not self.ai_orchestrator:
             logger.debug("AI Orchestrator not available, skipping analysis")
             return
@@ -295,27 +310,6 @@ class AITradingSystem:
         logger.info("Running single data fetch...")
         return self.fetch_all_data()
 
-def run_mcp_service():
-    """运行MCP服务"""
-    import uvicorn
-    logger.info("Starting MCP service on port 5000...")
-    
-    # 确保MCP API密钥已设置
-    if not os.getenv('MCP_API_KEY'):
-        logger.error("MCP_API_KEY not set!")
-        return
-    
-    try:
-        uvicorn.run(
-            "main:mcp_app", 
-            host="0.0.0.0", 
-            port=5000, 
-            log_level="info",
-            reload=False
-        )
-    except Exception as e:
-        logger.error(f"MCP service error: {e}")
-
 def main():
     """主函数"""
     print("=" * 60)
@@ -347,21 +341,25 @@ def main():
             for failed in initial_results.get('failed', []):
                 print(f"   - {failed.get('timeframe')}: {failed.get('reason')}")
         
-        # 启动MCP服务
-        print("\n🚀 启动MCP服务 (端口 5000)...")
-        print("📊 系统已就绪 - AI现在可以通过MCP访问数据")
-        print("\n" + "=" * 60)
-        print("系统正在运行...")
-        print("按 Ctrl+C 停止")
-        print("=" * 60)
-        
         # 在后台运行定时任务
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
             # 启动定时任务
+            print("\n🔄 启动定时任务...")
             scheduler_future = executor.submit(trading_system.start_scheduler)
-            
-            # 启动MCP服务（主线程）
-            run_mcp_service()
+
+            if trading_system.mcp_enabled:
+                print("\n🚀 MCP 功能已集成到AI分析中")
+            else:
+                print("\nℹ️ MCP 功能已禁用 (缺少 MCP_API_KEY 或为占位符)")
+
+            print("\n" + "=" * 60)
+            print("系统正在运行...")
+            print("按 Ctrl+C 停止")
+            print("=" * 60)
+
+            # 保持主线程活动以等待调度程序线程
+            # .result()会阻塞，直到任务完成或引发异常
+            scheduler_future.result()
         
     except KeyboardInterrupt:
         print("\n\n🛑 用户终止程序")
